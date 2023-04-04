@@ -1,0 +1,9 @@
+application:
+  name: Course Management Platform
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/courseplatform
+    username: postgres
+    password: postgres
+  flyway:
+    locations: db.migration
