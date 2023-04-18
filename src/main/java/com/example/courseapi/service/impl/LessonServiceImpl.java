@@ -23,11 +23,11 @@ public class LessonServiceImpl implements LessonService {
     }
 
     @Override
-    public LessonDTO save(LessonDTO courseDTO) {
-        Lesson course = lessonMapper.toEntity(courseDTO);
-        course = lessonRepository.save(course);
+    public LessonDTO save(LessonDTO lessonDTO) {
+        Lesson lesson = lessonMapper.toEntity(lessonDTO);
+        lesson = lessonRepository.save(lesson);
 
-        return lessonMapper.toDto(course);
+        return lessonMapper.toDto(lesson);
     }
 
     @Override
@@ -36,12 +36,12 @@ public class LessonServiceImpl implements LessonService {
     }
 
     @Override
-    public List<LessonDTO> findByCourseId(Long courseId) {
-        return lessonMapper.toDto(lessonRepository.findByCourseId(courseId));
+    public List<LessonDTO> findByCourseId(Long lessonId) {
+        return lessonMapper.toDto(lessonRepository.findByCourseId(lessonId));
     }
 
     @Override
-    public void delete(Long courseId) {
-        lessonRepository.deleteById(courseId);
+    public void delete(Long lessonId) {
+        lessonRepository.deleteById(lessonId);
     }
 }

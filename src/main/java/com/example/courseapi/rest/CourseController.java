@@ -6,12 +6,13 @@ import com.example.courseapi.dto.CourseDTO;
 import com.example.courseapi.exception.SystemException;
 import com.example.courseapi.exception.code.ErrorCode;
 import com.example.courseapi.service.CourseService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -22,7 +23,7 @@ import java.util.Optional;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(value = "/api", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/api/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 public class CourseController {
     private static final String ENTITY_NAME = "Course";
 
@@ -44,7 +45,7 @@ public class CourseController {
             throw new SystemException("A new course cannot already have an ID", ErrorCode.BAD_REQUEST);
         }
         CourseDTO result = courseService.save(courseDTO);
-        return ResponseEntity.created(new URI("/api/courses/" + result.getId()))
+        return ResponseEntity.created(new URI("/api/v1/courses/" + result.getId()))
                 .headers(entityHeaderCreator.createEntityCreationAlert(ENTITY_NAME, result.getId().toString()))
                 .body(result);
     }

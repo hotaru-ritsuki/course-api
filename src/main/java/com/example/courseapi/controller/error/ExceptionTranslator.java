@@ -6,6 +6,7 @@ import com.example.courseapi.exception.code.ErrorCode;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.NestedRuntimeException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.dao.ConcurrencyFailureException;
@@ -23,8 +24,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.validation.ConstraintViolationException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,21 +39,30 @@ import static java.lang.String.valueOf;
 @ControllerAdvice
 @Log4j2
 public class ExceptionTranslator {
+
     @Value("${exception.show-stack-trace:false}")
     private Boolean showStackTrace;
+
+    /**
+     * Exception handler for {@link NoHandlerFoundException}
+     * @param ex exception to handle
+     * @param httpServletRequest current request
+     * @return returns not found response if the url starts with api otherwise redirect to page not found
+     */
     @ExceptionHandler(NoHandlerFoundException.class)
     public Object handlerNotFound(final NoHandlerFoundException ex, final HttpServletRequest httpServletRequest) {
         if (httpServletRequest.getRequestURI().startsWith("/api"))
-            return getApiNotFoundResponse();
+            return new ResponseEntity<>("Not Found", HttpStatus.NOT_FOUND);
         else {
             return "redirect:/#/page-not-found";
         }
     }
 
-    private ResponseEntity<String> getApiNotFoundResponse() {
-        return new ResponseEntity<>("Not Found", HttpStatus.NOT_FOUND);
-    }
-
+    /**
+     * Exception handler for {@link ConcurrencyFailureException}
+     * @param ex exception to handle
+     * @return returns user-friendly json response for {@link ConcurrencyFailureException}
+     */
     @ExceptionHandler(ConcurrencyFailureException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     @ResponseBody
@@ -61,6 +71,11 @@ public class ExceptionTranslator {
         return this.exceptionToApiError(ex).code(valueOf(HttpStatus.CONFLICT.value()));
     }
 
+    /**
+     * Exception handler for {@link MethodArgumentNotValidException}
+     * @param ex exception to handle
+     * @return returns user-friendly json response for {@link MethodArgumentNotValidException}
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
@@ -78,6 +93,11 @@ public class ExceptionTranslator {
         return errorMessages;
     }
 
+    /**
+     * Exception handler for {@link IllegalArgumentException}
+     * @param ex exception to handle
+     * @return returns user-friendly json response for {@link IllegalArgumentException}
+     */
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseBody
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -86,6 +106,11 @@ public class ExceptionTranslator {
         return this.exceptionToApiError(ex).code(valueOf(HttpStatus.BAD_REQUEST.value()));
     }
 
+    /**
+     * Exception handler for {@link AccessDeniedException}
+     * @param ex exception to handle
+     * @return returns user-friendly json response for {@link AccessDeniedException}
+     */
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     @ResponseBody
@@ -94,6 +119,11 @@ public class ExceptionTranslator {
         return this.exceptionToApiError(ex).code(valueOf(HttpStatus.FORBIDDEN.value()));
     }
 
+    /**
+     * Exception handler for {@link HttpRequestMethodNotSupportedException}
+     * @param ex exception to handle
+     * @return returns user-friendly json response for {@link HttpRequestMethodNotSupportedException}
+     */
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     @ResponseBody
     @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
@@ -102,6 +132,11 @@ public class ExceptionTranslator {
         return this.exceptionToApiError(ex).code(valueOf(HttpStatus.METHOD_NOT_ALLOWED.value()));
     }
 
+    /**
+     * Exception handler for {@link ConstraintViolationException}
+     * @param ex exception to handle
+     * @return returns user-friendly json response for {@link ConstraintViolationException}
+     */
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseBody
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -120,6 +155,11 @@ public class ExceptionTranslator {
         return errorMessages;
     }
 
+    /**
+     * Exception handler for {@link SystemException}
+     * @param ex exception to handle
+     * @return returns user-friendly json response for {@link SystemException}
+     */
     @ExceptionHandler(SystemException.class)
     public ResponseEntity<ApiExceptionDTO> handleCustomException(final SystemException ex) {
         log.error(ex.getMessage(), ex);
@@ -131,20 +171,30 @@ public class ExceptionTranslator {
         return builder.body(apiExceptionDTO);
     }
 
+    /**
+     * Exception handler for {@link HttpMessageConversionException} and {@link MethodArgumentTypeMismatchException}
+     * @param ex exception to handle
+     * @return returns user-friendly json response for {@link HttpMessageConversionException} and {@link MethodArgumentTypeMismatchException}
+     */
     @ExceptionHandler({HttpMessageConversionException.class, MethodArgumentTypeMismatchException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public ResponseEntity<ApiExceptionDTO> handleEmptyPostBody(final HttpServletRequest request, final HttpMessageConversionException ex) {
+    public ResponseEntity<ApiExceptionDTO> handleEmptyPostBody(final NestedRuntimeException ex) {
         final ApiExceptionDTO apiException = this.exceptionToApiError(ex).code(valueOf(ErrorCode.BAD_REQUEST.getHttpStatus().value()));
 
         // if we get an error from @JsonCreator, ex.getCause().getCause() is SystemException
-        if(ex.getMostSpecificCause() instanceof SystemException){
+        if (ex.getMostSpecificCause() instanceof SystemException){
             apiException.setMessage(ex.getMostSpecificCause().getMessage());
         }
 
         return ResponseEntity.status(ErrorCode.BAD_REQUEST.getHttpStatus()).body(apiException);
     }
 
+    /**
+     * Exception handler for {@link HttpMessageNotReadableException}
+     * @param ex exception to handle
+     * @return returns user-friendly json response for {@link HttpMessageNotReadableException}
+     */
     @ExceptionHandler({HttpMessageNotReadableException.class})
     public ResponseEntity<ApiExceptionDTO> handleHttpBodyNotReadable(HttpMessageNotReadableException ex) {
         final ApiExceptionDTO apiException = this.exceptionToApiError(ex).code(valueOf(ErrorCode.BAD_REQUEST.getHttpStatus().value()));
@@ -153,11 +203,16 @@ public class ExceptionTranslator {
         return ResponseEntity.status(ErrorCode.BAD_REQUEST.getHttpStatus()).body(apiException);
     }
 
-    private ApiExceptionDTO exceptionToApiError(final Exception e) {
+    /**
+     * Util method to convert any exception type to user-friendly {@link ApiExceptionDTO}
+     * @param ex exception to convert
+     * @return user-friendly {@link ApiExceptionDTO}
+     */
+    private ApiExceptionDTO exceptionToApiError(final Exception ex) {
         final ApiExceptionDTO apiExceptionDTO = new ApiExceptionDTO();
-        apiExceptionDTO.setMessage(e.getMessage());
+        apiExceptionDTO.setMessage(ex.getMessage());
         if (this.showStackTrace) {
-            apiExceptionDTO.setStackTrace(ExceptionUtils.getStackTrace(e));
+            apiExceptionDTO.setStackTrace(ExceptionUtils.getStackTrace(ex));
         }
 
         return apiExceptionDTO;

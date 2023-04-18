@@ -22,7 +22,7 @@
         </filter>
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
 			<!-- daily rollover -->f
-			<fileNamePattern>${SERVER_PATH}/logs/prc/prc.%d{yyyy-MM-dd-HH}.log</fileNamePattern>
+			<fileNamePattern>${SERVER_PATH}/logs/courseapi/courseapi.%d{yyyy-MM-dd-HH}.log</fileNamePattern>
 		</rollingPolicy>
 
 		<encoder>

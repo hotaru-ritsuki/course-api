@@ -11,25 +11,15 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@Service
-@RequiredArgsConstructor
-public class UserService {
+public interface UserService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    List<User> getUsers();
 
-    public List<User> getUsers() {
-        return userRepository.findAll();
-    }
+    User saveUser(User user);
 
-    public UserDetails loadUserByUsername(String username) {
-        return null;
-    }
+    void addRoleToUser(String email, Roles role);
 
-    public User assignRole(Long userId, Roles role) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id " + userId));
-        user.setRole(role);
-        return userRepository.save(user);
-    }
+    User findUserByEmail(String email);
+
+    User getUserById(Long id);
 }

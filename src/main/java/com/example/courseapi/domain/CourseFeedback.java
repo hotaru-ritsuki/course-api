@@ -3,10 +3,12 @@ package com.example.courseapi.domain;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 
-
+/**
+ * Entity class for Course Feedback
+ */
 @Entity
 @Table(name = "course_feedbacks", schema = "course_management")
 @Data

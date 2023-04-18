@@ -3,10 +3,13 @@ package com.example.courseapi.domain;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 
+/**
+ * Entity class for Submission
+ */
 @Entity
 @Table(name = "submissions", schema = "course_management")
 @Data

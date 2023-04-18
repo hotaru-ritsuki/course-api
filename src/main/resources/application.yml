@@ -1,9 +1,40 @@
 application:
   name: Course Management Platform
+  url: http://localhost:8080
 spring:
+  debug:
+    requests: false
   datasource:
     url: jdbc:postgresql://localhost:5432/courseplatform
     username: postgres
     password: postgres
   flyway:
     locations: db.migration
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  ## Cache properties
+  freemarker.cache: false      #set false in development environment; It is false by default.
+  thymeleaf.cache: false
+  groovy.template.cache: false
+  devtools:
+    livereload:
+      enabled: true
+
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui-courses.html
+    disable-swagger-default-url: true # Disable default redirect to /swagger-ui/index.html
+    urls:
+      - url: ${springdoc.api-docs.path}
+        name: ${application.name}
+  api-docs:
+    enabled: true
+    path: /api/v1/api-docs
+    path-all: ${springdoc.api-docs.path}/**
+  paths-to-match: /api/v1/**
+
