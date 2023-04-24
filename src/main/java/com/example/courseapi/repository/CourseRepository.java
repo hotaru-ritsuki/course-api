@@ -9,4 +9,10 @@ import java.util.List;
 @Repository
 public interface CourseRepository extends JpaRepository<Course, Long> {
     List<Course> findByStudentsId(Long studentId);
+
+    List<Course> findByTitleContaining(String title);
+
+    List<Course> findByDescriptionContaining(String description);
+
+    boolean existsByIdAndStudentsId(Long courseId, Long studentId);
 }

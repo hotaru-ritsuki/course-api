@@ -18,4 +18,6 @@ public interface SubmissionService {
     Optional<SubmissionDTO> findById(Long lessonId, Long studentId);
 
     void delete(Long lessonId, Long studentId);
+
+    List<Submission> findAllByStudentIdAndCourseId(Long studentId, Long courseId);
 }

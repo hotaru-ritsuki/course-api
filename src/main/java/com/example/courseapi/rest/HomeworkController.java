@@ -2,15 +2,18 @@ package com.example.courseapi.rest;
 
 import com.example.courseapi.config.EntityHeaderCreator;
 import com.example.courseapi.controller.util.ResponseUtil;
+import com.example.courseapi.domain.Student;
 import com.example.courseapi.dto.HomeworkDTO;
 import com.example.courseapi.exception.SystemException;
 import com.example.courseapi.exception.code.ErrorCode;
+import com.example.courseapi.security.annotation.CurrentUser;
 import com.example.courseapi.service.HomeworkService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -44,6 +47,27 @@ public class HomeworkController {
             throw new SystemException("A new homework cannot already have an ID", ErrorCode.BAD_REQUEST);
         }
         HomeworkDTO result = homeworkService.save(homeworkDTO);
+        return ResponseEntity.created(new URI("/api/homeworks/" + result.getId()))
+                .headers(entityHeaderCreator.createEntityCreationAlert(ENTITY_NAME, result.getId().toString()))
+                .body(result);
+    }
+
+    /**
+     * {@code POST /homeworks} : Create a new homework.
+     *
+     * @param lessonId the lesson for which homework is uploading.
+     * @param file the attached file.
+     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new homeworkDTO,
+     * or with status {@code 400 (Bad Request)} if the homework has already an ID.
+     *
+     * @throws URISyntaxException if the Location URI syntax is incorrect.
+     */
+    @PostMapping("/{lessonId}/homeworks")
+    public ResponseEntity<HomeworkDTO> uploadHomeworkForLesson(
+            @PathVariable Long lessonId, @RequestParam("file") final MultipartFile file, @CurrentUser Student student
+    ) throws URISyntaxException {
+
+        HomeworkDTO result = homeworkService.uploadHomeworkForLesson(lessonId, file, student.getId());
         return ResponseEntity.created(new URI("/api/homeworks/" + result.getId()))
                 .headers(entityHeaderCreator.createEntityCreationAlert(ENTITY_NAME, result.getId().toString()))
                 .body(result);

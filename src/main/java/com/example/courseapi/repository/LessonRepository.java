@@ -9,4 +9,7 @@ import java.util.List;
 @Repository
 public interface LessonRepository extends JpaRepository<Lesson, Long> {
     List<Lesson> findByCourseId(Long courseId);
+
+    List<Lesson> findByTitleContaining(String text);
+    List<Lesson> findByDescriptionContaining(String text);
 }

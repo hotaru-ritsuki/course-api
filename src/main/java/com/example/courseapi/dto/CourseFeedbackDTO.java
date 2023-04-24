@@ -1,5 +1,8 @@
 package com.example.courseapi.dto;
 
+import com.example.courseapi.domain.Student;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -8,9 +11,13 @@ import lombok.EqualsAndHashCode;
 public class CourseFeedbackDTO extends BaseDTO {
     private Long id;
 
+    @NotNull
+    @Size(min = 10, max = 255)
     private String feedback;
 
-    private CourseDTO course;
+    @NotNull
+    private Long courseId;
 
-    private UserDTO student;
+    @NotNull
+    private Long studentId;
 }

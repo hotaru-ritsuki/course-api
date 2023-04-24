@@ -17,4 +17,13 @@ public interface LessonMapper extends EntityMapper<LessonDTO, Lesson> {
     LessonDTO toDto(Lesson lesson);
 
     Lesson toEntity(LessonDTO lessonDTO);
+
+    default Lesson fromId(Long id) {
+        if (id == null) {
+            return null;
+        }
+        Lesson lesson = new Lesson();
+        lesson.setId(id);
+        return lesson;
+    }
 }

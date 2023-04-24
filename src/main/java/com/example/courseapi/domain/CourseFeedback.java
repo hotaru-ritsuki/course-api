@@ -1,10 +1,15 @@
 package com.example.courseapi.domain;
 
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * Entity class for Course Feedback
@@ -13,20 +18,28 @@ import jakarta.validation.constraints.NotNull;
 @Table(name = "course_feedbacks", schema = "course_management")
 @Data
 @EqualsAndHashCode(callSuper = true)
+@EntityListeners(AuditingEntityListener.class)
+@SuperBuilder
+@AllArgsConstructor
+@NoArgsConstructor
 public class CourseFeedback extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "course_feedback_id")
     private Long id;
 
+    @NotNull
+    @Size(min = 10, max = 255)
     @Column(name = "feedback")
     private String feedback;
 
     @NotNull
     @ManyToOne
+    @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
     @NotNull
     @ManyToOne
-    private User student;
+    @JoinColumn(name = "student_id", nullable = false)
+    private Student student;
 }

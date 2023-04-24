@@ -15,4 +15,13 @@ public interface CourseMapper extends EntityMapper<CourseDTO, Course> {
     CourseDTO toDto(Course course);
 
     Course toEntity(CourseDTO courseDTO);
+
+    default Course fromId(Long id) {
+        if (id == null) {
+            return null;
+        }
+        Course course = new Course();
+        course.setId(id);
+        return course;
+    }
 }

@@ -1,7 +1,7 @@
 package com.example.courseapi.dto;
 
-import com.example.courseapi.domain.Lesson;
-import com.example.courseapi.domain.User;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -14,15 +14,19 @@ import java.util.Set;
 @EqualsAndHashCode(of = {"id"}, callSuper = false)
 public class CourseDTO extends BaseDTO {
 
-    private Long id;
+    protected Long id;
 
-    private String name;
+    @NotNull
+    @Size(min = 2, max = 100)
+    protected String title;
 
-    private String description;
+    @NotNull
+    @Size(min = 10, max = 255)
+    protected String description;
 
-    private Set<User> instructors;
+    protected Set<InstructorDTO> instructors;
 
-    private Set<User> students;
+    protected Set<StudentDTO> students;
 
-    private Set<Lesson> lessons;
+    protected Set<LessonDTO> lessons;
 }

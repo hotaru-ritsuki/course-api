@@ -11,4 +11,6 @@ public interface CourseFeedbackRepository extends JpaRepository<CourseFeedback, 
     List<CourseFeedback> findByStudentId(Long studentId);
 
     List<CourseFeedback> findByCourseId(Long courseId);
+
+    List<CourseFeedback> findByFeedbackContaining(String text);
 }

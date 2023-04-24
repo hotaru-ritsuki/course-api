@@ -20,6 +20,8 @@ import java.util.function.Function;
 public class JwtServiceImpl implements JwtService {
 
     private static final String SIGNING_KEY = "24432646294A404E635266556A586E5A7234753778214125442A472D4B615064";
+    private static final Integer REFRESH_TOKEN_EXPIRE_TIMEOUT = 60 * 1000;
+    private static final Integer ACCESS_TOKEN_EXPIRE_TIMEOUT = 24 * 60 * 1000;
 
     @Override
     public String extractUsername(String jwtToken) {
@@ -57,20 +59,24 @@ public class JwtServiceImpl implements JwtService {
     }
 
     @Override
-    public String generateJwtToken(UserDetails userDetails) {
-        return generateJwtToken(userDetails, new HashMap<>());
+    public String generateJwtToken(UserDetails userDetails, boolean isAccessToken) {
+        return generateJwtToken(userDetails, new HashMap<>(), isAccessToken);
     }
 
     @Override
-    public String generateJwtToken(UserDetails userDetails, Map<String, Object> extraClaims) {
+    public String generateJwtToken(UserDetails userDetails, Map<String, Object> extraClaims, boolean isAccessToken) {
         return Jwts
                 .builder()
                 .setClaims(extraClaims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 24 * 60 * 1000))
+                .setExpiration(new Date(System.currentTimeMillis() + getTokenTimeout(isAccessToken)))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    private Integer getTokenTimeout(boolean isAccessToken) {
+        return isAccessToken ? ACCESS_TOKEN_EXPIRE_TIMEOUT : REFRESH_TOKEN_EXPIRE_TIMEOUT;
     }
 
     private Key getSigningKey() {

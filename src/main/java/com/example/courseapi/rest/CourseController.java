@@ -2,9 +2,13 @@ package com.example.courseapi.rest;
 
 import com.example.courseapi.config.EntityHeaderCreator;
 import com.example.courseapi.controller.util.ResponseUtil;
+import com.example.courseapi.domain.Student;
+import com.example.courseapi.domain.User;
 import com.example.courseapi.dto.CourseDTO;
+import com.example.courseapi.dto.CourseStatusDTO;
 import com.example.courseapi.exception.SystemException;
 import com.example.courseapi.exception.code.ErrorCode;
+import com.example.courseapi.security.annotation.CurrentUser;
 import com.example.courseapi.service.CourseService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -15,8 +19,10 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * REST controller for managing {@link com.example.courseapi.domain.Course}.
@@ -104,5 +110,62 @@ public class CourseController {
         return ResponseEntity.noContent()
                 .headers(entityHeaderCreator.createEntityDeletionAlert(ENTITY_NAME, id.toString()))
                 .build();
+    }
+
+    /**
+     * {@code POST /courses} : Subscribes current student to a course.
+     *
+     * @param courseId the corresponding course id to subscribe.
+     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new courseDTO,
+     * or with status {@code 400 (Bad Request)} if the course has already an ID.
+     *
+     * @throws URISyntaxException if the Location URI syntax is incorrect.
+     */
+    @PostMapping("/courses/{courseId}/subscribe")
+    public ResponseEntity<Void> subscribeMeToCourse(@PathVariable Long courseId, @CurrentUser Student student) throws URISyntaxException {
+        courseService.subscribeStudentToCourse(courseId, student.getId());
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * {@code POST /courses} : Subscribes student to a course.
+     *
+     * @param courseId the corresponding course id to subscribe.
+     * @param studentId the student id which needs to be subscribed.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)},
+     * or with status {@code 400 (Bad Request)} if the course has already an ID.
+     *
+     * @throws URISyntaxException if the Location URI syntax is incorrect.
+     */
+    @PostMapping("/courses/{courseId}/subscribe/{studentId}")
+    public ResponseEntity<Void> subscribeStudentToCourse(@PathVariable Long courseId, @PathVariable Long studentId) throws URISyntaxException {
+        courseService.subscribeStudentToCourse(courseId, studentId);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * {@code GET  /courses/my} : get my courses.
+     *
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the courseDTOs,
+     * or with status {@code 404 (Not Found)}.
+     */
+    @GetMapping("/courses/my")
+    public ResponseEntity<Collection<CourseDTO>> getMyCourses(@CurrentUser User user) {
+        Set<CourseDTO> courseDTOs = courseService.getMyCourses(user.getId());
+        return ResponseEntity.ok(courseDTOs);
+    }
+
+
+    /**
+     * {@code GET  /courses/:id} : get the "id" course status.
+     *
+     * @param courseId the id of the courseDTO to retrieve.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the courseDTO,
+     * or with status {@code 404 (Not Found)}.
+     */
+    @GetMapping("/courses/{courseId}/status")
+    public ResponseEntity<CourseStatusDTO> getCourseStatus(@PathVariable Long courseId, @CurrentUser Student student) {
+        CourseStatusDTO courseStatusDTO = courseService.getCourseStatus(courseId, student.getId());
+        return ResponseEntity.ok(courseStatusDTO);
     }
 }

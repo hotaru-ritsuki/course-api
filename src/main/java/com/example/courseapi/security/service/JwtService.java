@@ -9,9 +9,9 @@ import java.util.function.Function;
 public interface JwtService {
     String extractUsername(String jwtToken);
 
-    String generateJwtToken(UserDetails userDetails);
+    String generateJwtToken(UserDetails userDetails, boolean isAccessToken);
 
-    String generateJwtToken(UserDetails userDetails, Map<String, Object> extraClaims);
+    String generateJwtToken(UserDetails userDetails, Map<String, Object> extraClaims, boolean isAccessToken);
 
     boolean isJwtTokenValid(String jwtToken, UserDetails userDetails);
 

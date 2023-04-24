@@ -10,4 +10,7 @@ import java.util.List;
 public interface HomeworkRepository extends JpaRepository<Homework, Long> {
     List<Homework> findByLessonId(Long lessonId);
     List<Homework> findByStudentId(Long studentId);
+    List<Homework> findByTitleContaining(String text);
+
+    List<Homework> findByStudentIdAndLessonId(Long studentId, Long lessonId);
 }

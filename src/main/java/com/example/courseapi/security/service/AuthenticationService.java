@@ -1,11 +1,16 @@
 package com.example.courseapi.security.service;
 
-import com.example.courseapi.security.dto.AuthenticationRequest;
-import com.example.courseapi.security.dto.AuthenticationResponse;
-import com.example.courseapi.security.dto.RegisterRequest;
+import com.example.courseapi.security.dto.JWTRefreshDTO;
+import com.example.courseapi.security.dto.LoginRequestDTO;
+import com.example.courseapi.security.dto.JWTTokenDTO;
+import com.example.courseapi.security.dto.SignUpRequestDTO;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public interface AuthenticationService {
-    AuthenticationResponse register(RegisterRequest registerRequest);
+    JWTTokenDTO register(SignUpRequestDTO signUpRequestDTO);
 
-    AuthenticationResponse authenticate(AuthenticationRequest authenticationRequest);
+    JWTTokenDTO authenticate(LoginRequestDTO loginRequestDTO);
+
+    JWTTokenDTO refresh(JWTRefreshDTO jwtRefreshDTO, HttpServletRequest request);
 }

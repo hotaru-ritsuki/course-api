@@ -39,4 +39,9 @@ public class SubmissionServiceImpl implements SubmissionService {
     public void delete(Long lessonId, Long studentId) {
         submissionRepository.deleteBySubmissionId_LessonIdAndSubmissionId_StudentId(lessonId, studentId);
     }
+
+    @Override
+    public List<Submission> findAllByStudentIdAndCourseId(Long studentId, Long courseId) {
+        return submissionRepository.findAllByStudentIdAndLessonCourseId(studentId, courseId);
+    }
 }

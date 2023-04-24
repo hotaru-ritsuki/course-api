@@ -16,4 +16,13 @@ public interface HomeworkMapper extends EntityMapper<HomeworkDTO, Homework> {
     HomeworkDTO toDto(Homework homework);
 
     Homework toEntity(HomeworkDTO homeworkDTO);
+
+    default Homework fromId(Long id) {
+        if (id == null) {
+            return null;
+        }
+        Homework homework = new Homework();
+        homework.setId(id);
+        return homework;
+    }
 }

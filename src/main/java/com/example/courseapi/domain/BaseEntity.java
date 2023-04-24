@@ -1,8 +1,7 @@
 package com.example.courseapi.domain;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -21,24 +20,25 @@ import java.time.LocalDateTime;
  */
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
-@Getter
-@Setter
-@ToString
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
 public class BaseEntity implements Serializable {
 
     @Column(name = "modified_date")
     @LastModifiedDate
-    private LocalDateTime modifiedDate;
+    protected LocalDateTime modifiedDate;
 
     @Column(name = "modified_by")
     @LastModifiedBy
-    private String modifiedBy;
+    protected String modifiedBy;
 
     @Column(name = "created_date", updatable = false)
     @CreatedDate
-    private LocalDateTime createdDate;
+    protected LocalDateTime createdDate;
 
     @Column(name = "created_by", updatable = false)
     @CreatedBy
-    private String createdBy;
+    protected String createdBy;
 }

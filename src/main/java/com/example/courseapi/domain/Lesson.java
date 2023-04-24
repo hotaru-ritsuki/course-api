@@ -1,11 +1,15 @@
 package com.example.courseapi.domain;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+
 import java.util.Set;
 
 /**
@@ -15,6 +19,9 @@ import java.util.Set;
 @Table(name = "lessons", schema = "course_management")
 @Data
 @EqualsAndHashCode(callSuper = true)
+@SuperBuilder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Lesson extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,12 +1,15 @@
 package com.example.courseapi.domain;
 
 import com.example.courseapi.domain.enums.Roles;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.DiscriminatorOptions;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -18,49 +21,51 @@ import java.util.Set;
  * Entity class for User
  *
  */
-@Entity
+@Entity(name = "User")
 @Table(name = "users", schema = "course_management")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(
+        discriminatorType = DiscriminatorType.STRING,
+        name = "role",
+        columnDefinition = "VARCHAR(20)"
+)
+@DiscriminatorValue("null")
+@DiscriminatorOptions(insert = false)
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class User extends BaseEntity implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
-    private Long id;
+    protected Long id;
 
     @NotNull
     @Size(min = 2, max = 50)
     @Column(name = "first_name")
-    private String firstName;
+    protected String firstName;
 
     @NotNull
     @Size(min = 2, max = 50)
     @Column(name = "last_name")
-    private String lastName;
+    protected String lastName;
 
     @NotNull
     @Email
     @Column(name = "email")
-    private String email;
+    protected String email;
 
     @NotNull
     @Size(min = 8, max = 100)
     @Column(name = "password")
-    private String password;
+    @JsonIgnore
+    protected String password;
 
-    @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "role")
-    private Roles role;
-
-    @ManyToMany(mappedBy = "students")
-    private Set<Course> studentCourses;
-
-    @ManyToMany(mappedBy = "instructors")
-    private Set<Course> instructorCourses;
+    @Column(name = "role", insertable = false, updatable = false)
+    protected Roles role;
 
     /**
      * Get user authorities to manage role based access.

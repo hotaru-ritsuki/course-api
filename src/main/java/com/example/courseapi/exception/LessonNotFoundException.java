@@ -1,4 +1,4 @@
 package com.example.courseapi.exception;
 
-public class LessonNotFoundException {
+public class LessonNotFoundException extends RuntimeException {
 }
