@@ -1,7 +1,8 @@
 package com.example.courseapi.rest;
 
 import com.example.courseapi.config.EntityHeaderCreator;
-import com.example.courseapi.controller.util.ResponseUtil;
+import com.example.courseapi.config.args.generic.Filters;
+import com.example.courseapi.util.ResponseUtil;
 import com.example.courseapi.domain.Student;
 import com.example.courseapi.domain.User;
 import com.example.courseapi.dto.CourseDTO;
@@ -10,17 +11,18 @@ import com.example.courseapi.exception.SystemException;
 import com.example.courseapi.exception.code.ErrorCode;
 import com.example.courseapi.security.annotation.CurrentUser;
 import com.example.courseapi.service.CourseService;
-import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -78,11 +80,12 @@ public class CourseController {
     /**
      * {@code GET  /courses} : get all the courses.
      *
+     * @param pageable the pagination information.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of courses in body.
      */
     @GetMapping("/courses")
-    public List<CourseDTO> getAllCourses() {
-        return courseService.findAll();
+    public Page<CourseDTO> getAllCourses(final Filters filters, final Pageable pageable) {
+        return courseService.findAll(filters, pageable);
     }
 
     /**
@@ -113,32 +116,32 @@ public class CourseController {
     }
 
     /**
-     * {@code POST /courses} : Subscribes current student to a course.
+     * {@code POST /courses/{courseId}/subscribe} : Subscribes current student to a course.
      *
      * @param courseId the corresponding course id to subscribe.
-     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new courseDTO,
-     * or with status {@code 400 (Bad Request)} if the course has already an ID.
-     *
-     * @throws URISyntaxException if the Location URI syntax is incorrect.
+     * @param student current student which needs to be subscribed
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)},
+     * or with status {@code 400 (Bad Request)} if the student or course is not valid,
+     * or with status {@code 500 (Internal Server Error)} if the student couldn't be updated.
      */
-    @PostMapping("/courses/{courseId}/subscribe")
-    public ResponseEntity<Void> subscribeMeToCourse(@PathVariable Long courseId, @CurrentUser Student student) throws URISyntaxException {
+    @PreAuthorize("hasRole('STUDENT')")
+    @PutMapping("/courses/{courseId}/subscribe")
+    public ResponseEntity<Void> subscribeMeToCourse(@PathVariable Long courseId, @CurrentUser Student student) {
         courseService.subscribeStudentToCourse(courseId, student.getId());
         return ResponseEntity.ok().build();
     }
 
     /**
-     * {@code POST /courses} : Subscribes student to a course.
+     * {@code POST /courses/{courseId}/subscribe/{studentId}} : Subscribes student to a course.
      *
      * @param courseId the corresponding course id to subscribe.
      * @param studentId the student id which needs to be subscribed.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)},
      * or with status {@code 400 (Bad Request)} if the course has already an ID.
-     *
-     * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
-    @PostMapping("/courses/{courseId}/subscribe/{studentId}")
-    public ResponseEntity<Void> subscribeStudentToCourse(@PathVariable Long courseId, @PathVariable Long studentId) throws URISyntaxException {
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/courses/{courseId}/subscribe/{studentId}")
+    public ResponseEntity<Void> subscribeStudentToCourse(@PathVariable Long courseId, @PathVariable Long studentId) {
         courseService.subscribeStudentToCourse(courseId, studentId);
         return ResponseEntity.ok().build();
     }
@@ -149,23 +152,73 @@ public class CourseController {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the courseDTOs,
      * or with status {@code 404 (Not Found)}.
      */
+    @PreAuthorize("hasAnyRole('STUDENT', 'INSTRUCTOR')")
     @GetMapping("/courses/my")
-    public ResponseEntity<Collection<CourseDTO>> getMyCourses(@CurrentUser User user) {
-        Set<CourseDTO> courseDTOs = courseService.getMyCourses(user.getId());
+    public ResponseEntity<Collection<? extends CourseDTO>> getMyCourses(@CurrentUser User user) {
+        Set<? extends CourseDTO> courseDTOs = courseService.getMyCourses(user.getId());
         return ResponseEntity.ok(courseDTOs);
     }
 
 
     /**
-     * {@code GET  /courses/:id} : get the "id" course status.
+     * {@code GET  /courses/{courseId}/status} : get the course status for requested id.
      *
      * @param courseId the id of the courseDTO to retrieve.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the courseDTO,
      * or with status {@code 404 (Not Found)}.
      */
+    @PreAuthorize("hasRole('STUDENT')")
     @GetMapping("/courses/{courseId}/status")
     public ResponseEntity<CourseStatusDTO> getCourseStatus(@PathVariable Long courseId, @CurrentUser Student student) {
         CourseStatusDTO courseStatusDTO = courseService.getCourseStatus(courseId, student.getId());
         return ResponseEntity.ok(courseStatusDTO);
     }
+
+    /**
+     * {@code GET  /courses/{courseId}/status} : get the course status for requested course id and student id.
+     *
+     * @param courseId the id of the courseDTO to retrieve.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the courseDTO,
+     * or with status {@code 404 (Not Found)}.
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/courses/{courseId}/students/{studentId}/status")
+    public ResponseEntity<CourseStatusDTO> getCourseStatus(@PathVariable Long courseId, @PathVariable Long studentId) {
+        CourseStatusDTO courseStatusDTO = courseService.getCourseStatus(courseId, studentId);
+        return ResponseEntity.ok(courseStatusDTO);
+    }
+
+    /**
+     * {@code PUT /courses/{courseId}/instructor/{instructorId}} : Adds instructor to a course
+     *
+     * @param courseId the course id to set instructor.
+     * @param instructorId the instructor id which needs to be set.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)},
+     * or with status {@code 400 (Bad Request)} if the course has already an ID.
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/courses/{courseId}/instructor/{instructorId}")
+    public ResponseEntity<Void> addInstructorToCourse(@PathVariable Long courseId, @PathVariable Long instructorId) {
+        courseService.addInstructorToCourse(courseId, instructorId);
+        return ResponseEntity.ok()
+                .headers(entityHeaderCreator.createEntityDeletionAlert(ENTITY_NAME, courseId.toString()))
+                .build();
+    }
+
+    /**
+     * {@code DELETE  /courses/{courseId}/instructor/{instructorId}} : Deletes instructor from a course.
+     *
+     * @param courseId the course id to delete instructor.
+     * @param instructorId the instructor id which needs to be deleted.
+     * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/courses/{courseId}/instructor/{instructorId}")
+    public ResponseEntity<Void> deleteInstructorForCourse(@PathVariable Long courseId, @PathVariable Long instructorId) {
+        courseService.deleteInstructorForCourse(courseId, instructorId);
+        return ResponseEntity.ok()
+                .headers(entityHeaderCreator.createEntityDeletionAlert(ENTITY_NAME, courseId.toString()))
+                .build();
+    }
+
 }

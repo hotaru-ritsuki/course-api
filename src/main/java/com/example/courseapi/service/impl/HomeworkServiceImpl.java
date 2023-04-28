@@ -1,20 +1,23 @@
 package com.example.courseapi.service.impl;
 
+import com.example.courseapi.config.args.generic.Filters;
+import com.example.courseapi.config.args.specs.SpecificationBuilder;
 import com.example.courseapi.domain.Homework;
 import com.example.courseapi.domain.Lesson;
 import com.example.courseapi.domain.Student;
 import com.example.courseapi.dto.HomeworkDTO;
 import com.example.courseapi.exception.LessonNotFoundException;
 import com.example.courseapi.exception.StudentNotFoundException;
-import com.example.courseapi.exception.StudentNotRegistedAtCourseException;
+import com.example.courseapi.exception.StudentNotSubscribedToCourse;
 import com.example.courseapi.repository.HomeworkRepository;
 import com.example.courseapi.repository.LessonRepository;
 import com.example.courseapi.repository.StudentRepository;
-import com.example.courseapi.repository.UserRepository;
 import com.example.courseapi.service.HomeworkService;
 import com.example.courseapi.service.mapper.HomeworkMapper;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -44,8 +47,9 @@ public class HomeworkServiceImpl implements HomeworkService {
     }
 
     @Override
-    public List<HomeworkDTO> findAll() {
-        return homeworkMapper.toDto(homeworkRepository.findAll());
+    public Page<HomeworkDTO> findAll(Filters filters, Pageable pageable) {
+        return homeworkRepository.findAll(new SpecificationBuilder<Homework>(filters).build(), pageable)
+                .map(homeworkMapper::toDto);
     }
 
     @Override
@@ -71,13 +75,14 @@ public class HomeworkServiceImpl implements HomeworkService {
                 .orElseThrow(LessonNotFoundException::new);
 
         if (!student.getStudentCourses().contains(lesson.getCourse())) {
-            throw new StudentNotRegistedAtCourseException();
+            throw new StudentNotSubscribedToCourse();
         }
 
         String filePath = uploadHomeworkFile(student, lesson, file);
         Homework homework = Homework.builder()
                 .student(student)
                 .lesson(lesson)
+                .title(file.getName())
                 .filePath(filePath)
                 .build();
         homework = homeworkRepository.save(homework);

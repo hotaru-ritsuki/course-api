@@ -1,4 +1,4 @@
 package com.example.courseapi.exception;
 
-public class UserAlreadyExistsException {
+public class UserAlreadyExistsException extends RuntimeException {
 }

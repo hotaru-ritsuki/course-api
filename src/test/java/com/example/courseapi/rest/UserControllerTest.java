@@ -1,45 +1,55 @@
 package com.example.courseapi.rest;
 
 import com.example.courseapi.config.MockMvcBuilder;
+import com.example.courseapi.config.annotation.CustomMockAdmin;
+import com.example.courseapi.config.annotation.CustomMockInstructor;
+import com.example.courseapi.config.annotation.CustomMockStudent;
 import com.example.courseapi.config.annotation.DefaultTestConfiguration;
 import com.example.courseapi.domain.*;
-import com.example.courseapi.domain.User;
 import com.example.courseapi.domain.enums.Roles;
-import com.example.courseapi.dto.UserDTO;
-import com.example.courseapi.repository.UserRepository;
+import com.example.courseapi.dto.RoleDTO;
+import com.example.courseapi.dto.UserRequestDTO;
+import com.example.courseapi.dto.UserResponseDTO;
 import com.example.courseapi.repository.UserRepository;
 import com.example.courseapi.service.mapper.UserMapper;
-import com.example.courseapi.service.mapper.UserMapper;
+import com.example.courseapi.service.mapper.UserRequestMapper;
+import com.example.courseapi.util.EntityCreatorUtil;
 import com.example.courseapi.util.TestUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.validation.Valid;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
-import java.time.LocalDateTime;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @DefaultTestConfiguration
 class UserControllerTest {
-    private static final String DEFAULT_TITLE = "COURSE_A_TITLE";
-    private static final String DEFAULT_DESCRIPTION = "COURSE_A_DESCRIPTION";
-    private static final String UPDATED_TITLE = "COURSE_B_TITLE";
-    private static final String UPDATED_DESCRIPTION = "COURSE_B_DESCRIPTION";
+    private static final String UPDATED_FIRSTNAME = "A_FIRSTNAME";
+    private static final String UPDATED_LASTNAME = "A_LASTNAME";
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -54,355 +64,386 @@ class UserControllerTest {
     private UserRepository userRepository;
 
     @Autowired
-    private UserMapper userMapper;
+    private UserRequestMapper userRequestMapper;
 
     private MockMvc restUserMockMvc;
 
+    private AutoCloseable closable;
+
+    @AfterEach
+    public void destroy() throws Exception {
+        closable.close();
+    }
 
     @BeforeEach
     public void setup() {
-        MockitoAnnotations.openMocks(this);
+        this.closable = MockitoAnnotations.openMocks(this);
         this.restUserMockMvc = mockMvcBuilder.forControllers(userController);
     }
 
-    /**
-     * Create an User entity for this test.
-     * <p>
-     * This is a static method, as tests for other entities might also need it,
-     * if they test an entity which requires the current entity
-     */
-    public static User createUserEntity() {
-        return User.builder()
+    @Test
+    @Transactional
+    @CustomMockAdmin
+    void createUser() throws Exception {
+        long databaseSizeBeforeCreate = userRepository.count();
 
-                .build();
+        // Create user
+        UserRequestDTO userDTO = userRequestMapper.toDto(EntityCreatorUtil.createUser(""));
+
+        restUserMockMvc.perform(post("/api/v1/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
+                .andExpect(status().isCreated());
+
+        // Validate new User in the database
+        long databaseSizeAfterCreate= userRepository.count();
+        assertEquals(databaseSizeAfterCreate, databaseSizeBeforeCreate + 1);
+
+        Optional<User> testUserOpt = userRepository.findByEmail(userDTO.getEmail());
+        assertThat(testUserOpt).isPresent();
+        User testUser = testUserOpt.get();
+        assertThat(testUser.getId()).isNotNull();
+        assertThat(testUser.getFirstName()).isEqualTo("FirstName#");
+        assertThat(testUser.getLastName()).isEqualTo("LastName#");
+        assertThat(testUser.getRole()).isEqualTo(Roles.STUDENT);
+        assertThat(testUser.getEmail()).isEqualTo("user@email.com");
+        assertThat(testUser.getPassword()).isNotNull();
     }
 
-    /**
-     * Create an User entity for this test.
-     * <p>
-     * This is a static method, as tests for other entities might also need it,
-     * if they test an entity which requires the current entity
-     */
-    public static Student createStudentEntity() {
-        return Student.builder()
-                .firstName("Student FirstName")
-                .lastName("Student LastName")
-                .email("student@email.com")
-                .password("Student TestPassword")
-                .role(Roles.STUDENT)
-                .build();
+//    @PreAuthorize("hasRole('ADMIN')")
+//    @PostMapping("/users/{userId}/role")
+//    public ResponseEntity<UserResponseDTO> assignRoleForUser(@PathVariable Long userId, @Valid @RequestBody RoleDTO roleDTO)
+//            throws URISyntaxException {
+//        UserResponseDTO result = userService.assingRoleForUser(userId, roleDTO.getRole());
+//        return ResponseEntity.created(new URI("/api/users/" + result.getId()))
+//                .headers(entityHeaderCreator.createEntityCreationAlert(ENTITY_NAME, result.getId().toString()))
+//                .body(result);
+//    }
+    @Test
+    @Transactional
+    @CustomMockAdmin
+    void assignInstructorRoleToUser() throws Exception {
+        // Create user
+        User savedUser = EntityCreatorUtil.createUser("");
+        savedUser = userRepository.saveAndFlush(savedUser);
+
+        RoleDTO roleDTO = new RoleDTO(Roles.INSTRUCTOR);
+
+        restUserMockMvc.perform(post("/api/v1/users/" + savedUser.getId() + "/role")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(TestUtil.convertObjectToJsonBytes(roleDTO)))
+                .andExpect(status().isCreated());
+
+        // Validate new User in the database
+        Optional<User> testUserOpt = userRepository.findByEmail(savedUser.getEmail());
+        assertThat(testUserOpt).isPresent();
+        User testUser = testUserOpt.get();
+        assertThat(testUser.getId()).isNotNull();
+        assertThat(testUser.getFirstName()).isEqualTo("FirstName#");
+        assertThat(testUser.getLastName()).isEqualTo("LastName#");
+        assertThat(testUser.getEmail()).isEqualTo("user@email.com");
+        assertThat(testUser.getPassword()).isNotNull();
+        assertThat(testUser.getRole()).isEqualTo(Roles.INSTRUCTOR);
     }
 
-    /**
-     * Create an User entity for this test.
-     * <p>
-     * This is a static method, as tests for other entities might also need it,
-     * if they test an entity which requires the current entity
-     */
-    public static Instructor createInstructorEntity() {
-        return Instructor.builder()
+    @Test
+    @Transactional
+    @CustomMockAdmin
+    void assignAdminRoleToUser() throws Exception {
+        // Create user
+        User savedUser = EntityCreatorUtil.createUser("");
+        savedUser = userRepository.saveAndFlush(savedUser);
 
-                .build();
+        RoleDTO roleDTO = new RoleDTO(Roles.ADMIN);
+
+        restUserMockMvc.perform(post("/api/v1/users/" + savedUser.getId() + "/role")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(TestUtil.convertObjectToJsonBytes(roleDTO)))
+                .andExpect(status().isCreated());
+
+        // Validate new User in the database
+        Optional<User> testUserOpt = userRepository.findByEmail(savedUser.getEmail());
+        assertThat(testUserOpt).isPresent();
+        User testUser = testUserOpt.get();
+        assertThat(testUser.getId()).isNotNull();
+        assertThat(testUser.getFirstName()).isEqualTo("FirstName#");
+        assertThat(testUser.getLastName()).isEqualTo("LastName#");
+        assertThat(testUser.getEmail()).isEqualTo("user@email.com");
+        assertThat(testUser.getPassword()).isNotNull();
+        assertThat(testUser.getRole()).isEqualTo(Roles.ADMIN);
     }
 
-    /**
-     * Create an User entity for this test.
-     * <p>
-     * This is a static method, as tests for other entities might also need it,
-     * if they test an entity which requires the current entity
-     */
-    public static Admin createAdminEntity() {
-        return Admin.builder()
+    @Test
+    @Transactional
+    @CustomMockAdmin
+    public void createUserWithExistingId() throws Exception {
+        long databaseSizeBeforeCreate = userRepository.count();
 
-                .build();
+        // Create the User with an existing ID
+        UserRequestDTO userDTO = userRequestMapper.toDto(EntityCreatorUtil.createUser(""));
+        userDTO.setId(1L);
+
+        // An entity with an existing ID cannot be created, so this API call must fail
+        restUserMockMvc.perform(post("/api/v1/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
+                .andExpect(status().isBadRequest());
+
+        // Validate the User in the database
+        long databaseSizeAfterCreate = userRepository.count();
+        assertEquals(databaseSizeAfterCreate, databaseSizeBeforeCreate);
     }
 
-//    @Test
-//    @Transactional
-//    void createUser() throws Exception {
-//        long databaseSizeBeforeCreate = userRepository.count();
-//
-//        // Create user
-//        UserDTO userDTO = userMapper.toDto(createEntity());
-//
-//        restUserMockMvc.perform(post("/api/v1/users")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
-//                .andExpect(status().isCreated());
-//
-//        // Validate new User in the database
-//        List<User> userList = userRepository.findAll();
-//        assertEquals(userList.size(), databaseSizeBeforeCreate + 1);
-//
-//        User testUser = userList.get(userList.size() - 1);
-//        assertThat(testUser.getTitle()).isEqualTo(DEFAULT_TITLE);
-//        assertThat(testUser.getDescription()).isEqualTo(DEFAULT_DESCRIPTION);
-//
-//    }
-//
-//    @Test
-//    @Transactional
-//    public void createUserWithExistingId() throws Exception {
-//        long databaseSizeBeforeCreate = userRepository.count();
-//
-//        // Create the User with an existing ID
-//        UserDTO userDTO = userMapper.toDto(createEntity());
-//        userDTO.setId(1L);
-//
-//        // An entity with an existing ID cannot be created, so this API call must fail
-//        restUserMockMvc.perform(post("/api/v1/users")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
-//                .andExpect(status().isBadRequest());
-//
-//        // Validate the User in the database
-//        long databaseSizeAfterCreate = userRepository.count();
-//        assertEquals(databaseSizeAfterCreate, databaseSizeBeforeCreate);
-//    }
-//
-//    @Test
-//    @Transactional
-//    public void checkTitleIsRequired() throws Exception {
-//        long databaseSizeBeforeCreate = userRepository.count();
-//
-//        User user = createEntity();
-//        // set the field null
-//        user.setTitle(null);
-//
-//        // Create the User, which fails.
-//        UserDTO userDTO = userMapper.toDto(user);
-//
-//        restUserMockMvc.perform(post("/api/v1/users")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
-//                .andExpect(status().isBadRequest());
-//
-//        // Validate the User in the database
-//        long databaseSizeAfterCreate = userRepository.count();
-//        assertEquals(databaseSizeAfterCreate, databaseSizeBeforeCreate);
-//    }
-//
-//    @Test
-//    @Transactional
-//    public void checkTitle_shouldHaveLengthFrom2To100() throws Exception {
-//        long databaseSizeBeforeCreate = userRepository.count();
-//
-//        User user = createEntity();
-//        // set the field null
-//        user.setTitle(RandomStringUtils.randomAlphabetic(1));
-//
-//        // Create the User, which fails.
-//        UserDTO userDTO = userMapper.toDto(user);
-//
-//        restUserMockMvc.perform(post("/api/v1/users")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
-//                .andExpect(status().isBadRequest());
-//
-//        // Validate the User in the database
-//        long databaseSizeAfterCreate = userRepository.count();
-//        assertEquals(databaseSizeAfterCreate, databaseSizeBeforeCreate);
-//
-//        user.setTitle(RandomStringUtils.randomAlphabetic(2));
-//
-//        // Create the User, which fails.
-//        userDTO = userMapper.toDto(user);
-//
-//        restUserMockMvc.perform(post("/api/v1/users")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
-//                .andExpect(status().isCreated());
-//
-//        // Validate the User in the database
-//        databaseSizeAfterCreate = userRepository.count();
-//        assertEquals(databaseSizeAfterCreate, databaseSizeBeforeCreate + 1);
-//
-//        databaseSizeBeforeCreate = userRepository.count();
-//        user.setTitle(RandomStringUtils.randomAlphabetic(100));
-//
-//        // Create the User, which fails.
-//        userDTO = userMapper.toDto(user);
-//
-//        restUserMockMvc.perform(post("/api/v1/users")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
-//                .andExpect(status().isCreated());
-//
-//        // Validate the User in the database
-//        databaseSizeAfterCreate = userRepository.count();
-//        assertEquals(databaseSizeAfterCreate, databaseSizeBeforeCreate + 1);
-//    }
-//
-//    @Test
-//    @Transactional
-//    public void checkDescriptionIsRequired() throws Exception {
-//        long databaseSizeBeforeCreate = userRepository.count();
-//
-//        User user = createEntity();
-//        // set the field null
-//        user.setDescription(null);
-//
-//        // Create the User, which fails.
-//        UserDTO userDTO = userMapper.toDto(user);
-//
-//        restUserMockMvc.perform(post("/api/v1/users")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
-//                .andExpect(status().isBadRequest());
-//
-//        // Validate the User in the database
-//        long databaseSizeAfterCreate = userRepository.count();
-//        assertEquals(databaseSizeAfterCreate, databaseSizeBeforeCreate);
-//    }
-//
-//    @Test
-//    @Transactional
-//    public void checkDescription_shouldHaveLengthFrom10To255() throws Exception {
-//        long databaseSizeBeforeCreate = userRepository.count();
-//
-//        User user = createEntity();
-//        // set the field null
-//        user.setDescription(RandomStringUtils.randomAlphabetic(1));
-//
-//        // Create the User, which fails.
-//        UserDTO userDTO = userMapper.toDto(user);
-//
-//        restUserMockMvc.perform(post("/api/v1/users")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
-//                .andExpect(status().isBadRequest());
-//
-//        // Validate the User in the database
-//        long databaseSizeAfterCreate = userRepository.count();
-//        assertEquals(databaseSizeAfterCreate, databaseSizeBeforeCreate);
-//
-//        user.setDescription(RandomStringUtils.randomAlphabetic(10));
-//
-//        // Create the User, which fails.
-//        userDTO = userMapper.toDto(user);
-//
-//        restUserMockMvc.perform(post("/api/v1/users")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
-//                .andExpect(status().isCreated());
-//
-//        // Validate the User in the database
-//        databaseSizeAfterCreate = userRepository.count();
-//        assertEquals(databaseSizeAfterCreate, databaseSizeBeforeCreate + 1);
-//
-//        databaseSizeBeforeCreate = userRepository.count();
-//        user.setDescription(RandomStringUtils.randomAlphabetic(255));
-//
-//        // Create the User, which fails.
-//        userDTO = userMapper.toDto(user);
-//
-//        restUserMockMvc.perform(post("/api/v1/users")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
-//                .andExpect(status().isCreated());
-//
-//        // Validate the User in the database
-//        databaseSizeAfterCreate = userRepository.count();
-//        assertEquals(databaseSizeAfterCreate, databaseSizeBeforeCreate + 1);
-//    }
-//
-//
-//    @Test
-//    @Transactional
-//    public void getUser() throws Exception {
-//        // Initialize the database
-//        User user = userRepository.saveAndFlush(createEntity());
-//
-//        // Get the user
-//        restUserMockMvc.perform(get("/api/v1/users/{id}", user.getId())
-//                        .contentType(MediaType.APPLICATION_JSON))
-//                .andExpect(status().isOk())
-//                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-//                .andExpect(jsonPath("$.id").value(user.getId().intValue()))
-//                .andExpect(jsonPath("$.title").value(DEFAULT_TITLE))
-//                .andExpect(jsonPath("$.description").value(DEFAULT_DESCRIPTION));
-//    }
-//
-//    @Test
-//    @Transactional
-//    public void getNonExistingUser() throws Exception {
-//        // Get the user
-//        restUserMockMvc.perform(get("/api/v1/users/{id}", Long.MAX_VALUE)
-//                        .contentType(MediaType.APPLICATION_JSON))
-//                .andExpect(status().isNotFound());
-//    }
-//
-//    @Test
-//    @Transactional
-//    public void updateUser() throws Exception {
-//        // Initialize the database
-//        User user = userRepository.saveAndFlush(createEntity());
-//
-//        long databaseSizeBeforeUpdate = userRepository.count();
-//
-//        // Update the user
-//        Optional<User> updatedUserOpt = userRepository.findById(user.getId());
-//        assertThat(updatedUserOpt).isPresent();
-//        User updatedUser = updatedUserOpt.get();
-//        // Disconnect from session so that the updates on updatedUser are not directly saved in db
-//        entityManager.detach(updatedUser);
-//
-//        updatedUser
-//                .setTitle(UPDATED_TITLE);
-//        updatedUser
-//                .setDescription(UPDATED_DESCRIPTION);
-//
-//        UserDTO userDTO = userMapper.toDto(updatedUser);
-//
-//        restUserMockMvc.perform(put("/api/v1/users")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
-//                .andExpect(status().isOk());
-//
-//        // Validate the User in the database
-//        List<User> userList = userRepository.findAll();
-//        assertThat(userList).hasSize((int) databaseSizeBeforeUpdate);
-//        User testUser = userList.get(userList.size() - 1);
-//        assertThat(testUser.getTitle()).isEqualTo(UPDATED_TITLE);
-//        assertThat(testUser.getDescription()).isEqualTo(UPDATED_DESCRIPTION);
-//    }
-//
-//    @Test
-//    @Transactional
-//    public void updateNonExistingUser() throws Exception {
-//        long databaseSizeBeforeUpdate = userRepository.count();
-//
-//        // Create the User
-//        UserDTO userDTO = userMapper.toDto(createEntity());
-//
-//        // If the entity doesn't have an ID, it will throw BadRequestAlertException
-//        restUserMockMvc.perform(put("/api/v1/users")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
-//                .andExpect(status().isBadRequest());
-//
-//        // Validate the User in the database
-//        List<User> userList = userRepository.findAll();
-//        assertThat(userList).hasSize((int)databaseSizeBeforeUpdate);
-//    }
-//
-//    @Test
-//    @Transactional
-//    public void deleteUser() throws Exception {
-//        // Initialize the database
-//        User user = userRepository.saveAndFlush(createEntity());
-//
-//        int databaseSizeBeforeDelete = userRepository.findAll().size();
-//
-//        // Delete the user
-//        restUserMockMvc.perform(delete("/api/v1/users/{id}", user.getId())
-//                        .contentType(MediaType.APPLICATION_JSON))
-//                .andExpect(status().isNoContent());
-//
-//        // Validate the database is empty
-//        List<User> userList = userRepository.findAll();
-//        assertThat(userList).hasSize(databaseSizeBeforeDelete - 1);
-//    }
+    @Test
+    @Transactional
+    @CustomMockAdmin
+    public void checkFirstNameIsRequired() throws Exception {
+        long databaseSizeBeforeCreate = userRepository.count();
+
+        User user = EntityCreatorUtil.createUser("1");;
+        // set the field null
+        user.setFirstName(null);
+
+        // Create the User, which fails.
+        UserRequestDTO userDTO = userRequestMapper.toDto(user);
+
+        restUserMockMvc.perform(post("/api/v1/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
+                .andExpect(status().isBadRequest());
+
+        // Validate the User in the database
+        long databaseSizeAfterCreate = userRepository.count();
+        assertEquals(databaseSizeAfterCreate, databaseSizeBeforeCreate);
+    }
+
+    @Test
+    @Transactional
+    @CustomMockAdmin
+    public void checkFirstName_shouldHaveLengthFrom2To50() throws Exception {
+        long databaseSizeBeforeCreate = userRepository.count();
+
+        User user = EntityCreatorUtil.createUser("1");
+        // set the field null
+        user.setFirstName(RandomStringUtils.randomAlphabetic(1));
+
+        // Create the User, which fails.
+        UserRequestDTO userDTO = userRequestMapper.toDto(user);
+
+        restUserMockMvc.perform(post("/api/v1/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
+                .andExpect(status().isBadRequest());
+
+        // Validate the User in the database
+        long databaseSizeAfterCreate = userRepository.count();
+        assertEquals(databaseSizeAfterCreate, databaseSizeBeforeCreate);
+
+        user.setFirstName(RandomStringUtils.randomAlphabetic(2));
+
+        // Create the User, which fails.
+        userDTO = userRequestMapper.toDto(user);
+
+        restUserMockMvc.perform(post("/api/v1/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
+                .andExpect(status().isCreated());
+
+        // Validate the User in the database
+        databaseSizeAfterCreate = userRepository.count();
+        assertEquals(databaseSizeAfterCreate, databaseSizeBeforeCreate + 1);
+
+        databaseSizeBeforeCreate = userRepository.count();
+        user.setFirstName(RandomStringUtils.randomAlphabetic(50));
+
+        // Create the User, which fails.
+        userDTO = userRequestMapper.toDto(user);
+
+        restUserMockMvc.perform(post("/api/v1/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
+                .andExpect(status().isCreated());
+
+        // Validate the User in the database
+        databaseSizeAfterCreate = userRepository.count();
+        assertEquals(databaseSizeAfterCreate, databaseSizeBeforeCreate + 1);
+    }
+
+    @Test
+    @Transactional
+    @CustomMockAdmin
+    public void getUser() throws Exception {
+        // Initialize the database
+        User user = userRepository.saveAndFlush(EntityCreatorUtil.createUser(""));
+
+        // Get the user
+        restUserMockMvc.perform(get("/api/v1/users/" + user.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(user.getId().intValue()))
+                .andExpect(jsonPath("$.firstName").value("FirstName#"))
+                .andExpect(jsonPath("$.lastName").value("LastName#"))
+                .andExpect(jsonPath("$.email").value("user@email.com"));
+    }
+
+    @Test
+    @Transactional
+    @CustomMockAdmin
+    public void getNonExistingUser() throws Exception {
+        // Get the user
+        restUserMockMvc.perform(get("/api/v1/users/{id}", Long.MAX_VALUE)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @Transactional
+    @CustomMockAdmin
+    public void updateUser() throws Exception {
+        // Initialize the database
+        User user = userRepository.saveAndFlush(EntityCreatorUtil.createUser(""));
+
+        long databaseSizeBeforeUpdate = userRepository.count();
+
+        // Update the user
+        Optional<User> updatedUserOpt = userRepository.findById(user.getId());
+        assertThat(updatedUserOpt).isPresent();
+        User updatedUser = updatedUserOpt.get();
+        // Disconnect from session so that the updates on updatedUser are not directly saved in db
+        entityManager.detach(updatedUser);
+
+        updatedUser
+                .setFirstName(UPDATED_FIRSTNAME);
+        updatedUser
+                .setLastName(UPDATED_LASTNAME);
+
+        UserRequestDTO userDTO = userRequestMapper.toDto(updatedUser);
+
+        restUserMockMvc.perform(put("/api/v1/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(status().isOk());
+
+        // Validate the User in the database
+        Long databaseSizeAfterUpdate = userRepository.count();
+        assertThat(databaseSizeAfterUpdate).isEqualTo(databaseSizeBeforeUpdate);
+        Optional<User> checkUserOpt = userRepository.findById(user.getId());
+        assertThat(checkUserOpt).isPresent();
+        User checkUser = checkUserOpt.get();
+        assertThat(checkUser.getFirstName()).isEqualTo(UPDATED_FIRSTNAME);
+        assertThat(checkUser.getLastName()).isEqualTo(UPDATED_LASTNAME);
+    }
+
+    @Test
+    @Transactional
+    @CustomMockAdmin
+    public void updateNonExistingUser() throws Exception {
+        long databaseSizeBeforeUpdate = userRepository.count();
+
+        // Create the User
+        UserRequestDTO userDTO = userRequestMapper.toDto(EntityCreatorUtil.createUser(""));
+
+        // If the entity doesn't have an ID, it will throw BadRequestAlertException
+        restUserMockMvc.perform(put("/api/v1/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(TestUtil.convertObjectToJsonBytes(userDTO)))
+                .andExpect(status().isBadRequest());
+
+        // Validate the User in the database
+        List<User> userList = userRepository.findAll();
+        assertThat(userList).hasSize((int)databaseSizeBeforeUpdate);
+    }
+
+    @Test
+    @Transactional
+    @CustomMockAdmin
+    public void deleteUser() throws Exception {
+        // Initialize the database
+        User user = userRepository.saveAndFlush(EntityCreatorUtil.createUser(""));
+
+        int databaseSizeBeforeDelete = userRepository.findAll().size();
+
+        // Delete the user
+        restUserMockMvc.perform(delete("/api/v1/users/{id}", user.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNoContent());
+
+        // Validate the database is empty
+        List<User> userList = userRepository.findAll();
+        assertThat(userList).hasSize(databaseSizeBeforeDelete - 1);
+    }
+
+    @Test
+    @Transactional
+    @CustomMockAdmin
+    public void getAllUsers() throws Exception {
+        // Initialize the database
+        User user = userRepository.saveAndFlush(EntityCreatorUtil.createUser(""));
+
+        // Get all the userList
+        restUserMockMvc.perform(
+                        get("/api/v1/users?sort=id,desc&filter=id:equals:" + user.getId())
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.content", Matchers.hasSize(1)));
+    }
+
+    @Test
+    @Transactional
+    @CustomMockStudent
+    public void getMeAsStudent() throws Exception {
+        restUserMockMvc.perform(
+                        get("/api/v1/users/me")
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.email", Matchers.is("student@email.com")))
+                .andExpect(jsonPath("$.firstName", Matchers.is("FirstName#")))
+                .andExpect(jsonPath("$.lastName", Matchers.is("LastName#")))
+                .andExpect(jsonPath("$.studentCourseIds").exists())
+                .andExpect(jsonPath("$.studentCourseIds").isArray())
+                .andExpect(jsonPath("$.instructorCourseIds").doesNotExist());
+    }
+
+    @Test
+    @Transactional
+    @CustomMockAdmin
+    public void getMeAsAdmin() throws Exception {
+        restUserMockMvc.perform(
+                        get("/api/v1/users/me")
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.email", Matchers.is("admin@email.com")))
+                .andExpect(jsonPath("$.firstName", Matchers.is("FirstName#")))
+                .andExpect(jsonPath("$.lastName", Matchers.is("LastName#")))
+                .andExpect(jsonPath("$.studentCourseIds").doesNotExist())
+                .andExpect(jsonPath("$.instructorCourseIds").doesNotExist());
+    }
+
+    @Test
+    @Transactional
+    @CustomMockInstructor
+    public void getMeAsInstructor() throws Exception {
+        restUserMockMvc.perform(
+                        get("/api/v1/users/me")
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.email", Matchers.is("instructor@email.com")))
+                .andExpect(jsonPath("$.firstName", Matchers.is("FirstName#")))
+                .andExpect(jsonPath("$.lastName", Matchers.is("LastName#")))
+                .andExpect(jsonPath("$.studentCourseIds").doesNotExist())
+                .andExpect(jsonPath("$.instructorCourseIds").exists())
+                .andExpect(jsonPath("$.instructorCourseIds").isArray());
+    }
 
     @Test
     @Transactional
@@ -421,11 +462,27 @@ class UserControllerTest {
 
     @Test
     @Transactional
-    public void dtoEqualsVerifier() throws Exception {
-        TestUtil.equalsVerifier(UserDTO.class);
-        UserDTO userDTO1 = new UserDTO();
+    public void responseDtoEqualsVerifier() throws Exception {
+        TestUtil.equalsVerifier(UserResponseDTO.class);
+        UserResponseDTO userDTO1 = new UserResponseDTO();
         userDTO1.setId(1L);
-        UserDTO userDTO2 = new UserDTO();
+        UserResponseDTO userDTO2 = new UserResponseDTO();
+        assertThat(userDTO1).isNotEqualTo(userDTO2);
+        userDTO2.setId(userDTO1.getId());
+        assertThat(userDTO1).isEqualTo(userDTO2);
+        userDTO2.setId(2L);
+        assertThat(userDTO1).isNotEqualTo(userDTO2);
+        userDTO1.setId(null);
+        assertThat(userDTO1).isNotEqualTo(userDTO2);
+    }
+
+    @Test
+    @Transactional
+    public void requestDtoEqualsVerifier() throws Exception {
+        TestUtil.equalsVerifier(UserRequestDTO.class);
+        UserRequestDTO userDTO1 = new UserRequestDTO();
+        userDTO1.setId(1L);
+        UserRequestDTO userDTO2 = new UserRequestDTO();
         assertThat(userDTO1).isNotEqualTo(userDTO2);
         userDTO2.setId(userDTO1.getId());
         assertThat(userDTO1).isEqualTo(userDTO2);

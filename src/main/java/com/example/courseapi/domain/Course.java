@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -16,7 +17,8 @@ import java.util.Set;
 @Entity
 @Table(name = "courses", schema = "course_management")
 @Data
-@EqualsAndHashCode(callSuper = true)
+@ToString(exclude = {"instructors", "students", "lessons", "courseFeedbacks"})
+@EqualsAndHashCode(callSuper = true, exclude = {"instructors", "students", "lessons", "courseFeedbacks"})
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,7 +26,7 @@ import java.util.Set;
 public class Course extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "course_id")
+    @Column(name = "id")
     private Long id;
 
     @NotNull
@@ -37,37 +39,50 @@ public class Course extends BaseEntity {
     @Column(name = "description")
     private String description;
 
-    @ManyToMany
-    @JoinTable(
-            schema = "course_management",
-            name = "courses_instructors",
-            joinColumns = @JoinColumn(name = "instructor_id"),
-            inverseJoinColumns = @JoinColumn(name = "course_id"))
     @Size(min = 1)
-    private Set<Instructor> instructors;
+    @Builder.Default
+    @ManyToMany(mappedBy = "instructorCourses")
+    private Set<Instructor> instructors = new HashSet<>();
 
-    @ManyToMany
-    @JoinTable(
-            schema = "course_management",
-            name = "courses_students",
-            joinColumns = @JoinColumn(name = "student_id"),
-            inverseJoinColumns = @JoinColumn(name = "course_id"))
-    private Set<Student> students;
+    @Builder.Default
+    @ManyToMany(mappedBy = "studentCourses", cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+    private Set<Student> students = new HashSet<>();
 
+    @Builder.Default
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private Set<Lesson> lessons = new HashSet<>();
+
+    @Builder.Default
     @OneToMany(mappedBy = "course")
-    @Size(min = 5)
-    private Set<Lesson> lessons;
+    private Set<CourseFeedback> courseFeedbacks = new HashSet<>();
 
-    @OneToMany(mappedBy = "course")
-    private Set<CourseFeedback> courseFeedbacks;
+    public void addLesson(Lesson lesson) {
+        this.lessons.add(lesson);
+        lesson.setCourse(this);
+    }
+
+    public void removeLesson(Lesson lesson) {
+        this.lessons.remove(lesson);
+        lesson.setCourse(null);
+    }
 
     public void addStudent(Student student) {
         this.students.add(student);
         student.getStudentCourses().add(this);
     }
 
+    public void removeStudent(Student student) {
+        this.students.remove(student);
+        student.getStudentCourses().remove(this);
+    }
+
     public void addInstructor(Instructor instructor) {
         this.instructors.add(instructor);
         instructor.getInstructorCourses().add(this);
+    }
+
+    public void removeInstructor(Instructor instructor) {
+        this.instructors.remove(instructor);
+        instructor.getInstructorCourses().remove(this);
     }
 }

@@ -24,9 +24,10 @@ public class CourseDTO extends BaseDTO {
     @Size(min = 10, max = 255)
     protected String description;
 
-    protected Set<InstructorDTO> instructors;
+    protected Set<Long> instructorIds;
 
-    protected Set<StudentDTO> students;
+    protected Set<Long> studentIds;
 
-    protected Set<LessonDTO> lessons;
+    @Size(min = 5)
+    protected Set<Long> lessonIds;
 }

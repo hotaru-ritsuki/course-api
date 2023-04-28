@@ -23,20 +23,25 @@ import lombok.experimental.SuperBuilder;
 public class Homework extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "homework_id")
+    @Column(name = "id")
     private Long id;
 
     @NotNull
-    @Size(min = 2, max = 100)
+    @Size(min = 2, max = 50)
     @Column(name = "title")
     private String title;
 
+    @NotNull
     @Column(name = "file_path")
     private String filePath;
 
+    @NotNull
     @ManyToOne
+    @JoinColumn(name = "lesson_id", nullable = false)
     private Lesson lesson;
 
+    @NotNull
     @ManyToOne
+    @JoinColumn(name = "student_id", nullable = false)
     private Student student;
 }

@@ -1,6 +1,5 @@
 package com.example.courseapi.dto;
 
-import com.example.courseapi.domain.Student;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;

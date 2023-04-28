@@ -1,23 +1,29 @@
 package com.example.courseapi.repository;
 
 
-import com.example.courseapi.config.DefaultRepositoryTestConfiguration;
+import com.example.courseapi.config.DefaultJPARepositoryTestConfiguration;
 import com.example.courseapi.domain.Course;
 import com.example.courseapi.domain.CourseFeedback;
+import com.example.courseapi.domain.Instructor;
 import com.example.courseapi.domain.Student;
-import com.example.courseapi.domain.enums.Roles;
+import com.example.courseapi.util.EntityCreatorUtil;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SuppressWarnings("unused")
-@DefaultRepositoryTestConfiguration
+@DefaultJPARepositoryTestConfiguration
 public class CourseFeedbackRepositoryTest {
     
     @Autowired
@@ -30,31 +36,25 @@ public class CourseFeedbackRepositoryTest {
     private UserRepository userRepository;
 
     @Autowired
+    private InstructorRepository instructorRepository;
+
+    @Autowired
     private CourseRepository courseRepository;
 
-    private static Student createStudent(String uuid) {
-        return Student.builder()
-                .firstName("FirstName#" + uuid)
-                .lastName("LastName#" + uuid)
-                .email("student" + uuid + "@email.com")
-                .password("TestPassword")
-                .role(Roles.STUDENT)
-                .createdBy("Anonymous")
-                .createdDate(LocalDateTime.now())
-                .modifiedBy("Anonymous")
-                .modifiedDate(LocalDateTime.now())
-                .build();
+    private Set<Instructor> instructors;
+    private AutoCloseable closable;
+
+    @AfterEach
+    public void destroy() throws Exception {
+        closable.close();
     }
 
-    private static Course createCourse(String uuid) {
-        return Course.builder()
-                .description("Course description #" + uuid)
-                .title("Course title #" +uuid)
-                .createdBy("Anonymous")
-                .createdDate(LocalDateTime.now())
-                .modifiedBy("Anonymous")
-                .modifiedDate(LocalDateTime.now())
-                .build();
+    @BeforeEach
+    public void setup() {
+        this.closable = MockitoAnnotations.openMocks(this);
+        Set<Instructor> instructorSet = new HashSet<>();
+        instructorSet.add(instructorRepository.save(EntityCreatorUtil.createInstructor()));
+        this.instructors = instructorSet;
     }
 
     @Test
@@ -66,71 +66,39 @@ public class CourseFeedbackRepositoryTest {
 
     @Test
     public void should_store_a_course_feedback() {
-        Student student = userRepository.save(createStudent("1"));
-        Course course = courseRepository.save(createCourse("1"));
+        Student student = userRepository.save(EntityCreatorUtil.createStudent("1"));
+        Course course = courseRepository.save(EntityCreatorUtil.createCourse("1", instructors));
 
         CourseFeedback courseFeedback = courseFeedbackRepository.save(
-                CourseFeedback.builder()
-                        .feedback("CourseFeedback title")
-                        .student(student)
-                        .course(course)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createCourseFeedback("1", student, course)
         );
 
-        assertThat(courseFeedback).hasFieldOrPropertyWithValue("feedback", "CourseFeedback title");
+        assertThat(courseFeedback).hasFieldOrPropertyWithValue("feedback", "Feedback#1");
         assertThat(courseFeedback).hasFieldOrPropertyWithValue("student", student);
         assertThat(courseFeedback).hasFieldOrPropertyWithValue("course", course);
     }
 
     @Test
     public void should_find_all_course_feedbacks() {
-        Student student1 = entityManager.persist(createStudent("1"));
-        Course course1 = entityManager.persist(createCourse("1"));
+        Student student1 = entityManager.persist(EntityCreatorUtil.createStudent("1"));
+        Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructors));
 
         CourseFeedback courseFeedback1 = entityManager.persist(
-                CourseFeedback.builder()
-                        .feedback("Feedback#1")
-                        .student(student1)
-                        .course(course1)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createCourseFeedback("1", student1, course1)
         );
 
-        Student student2 = entityManager.persist(createStudent("2"));
-        Course course2 = entityManager.persist(createCourse("2"));
+        Student student2 = entityManager.persist(EntityCreatorUtil.createStudent("2"));
+        Course course2 = entityManager.persist(EntityCreatorUtil.createCourse("2", instructors));
 
         CourseFeedback courseFeedback2 = entityManager.persist(
-                CourseFeedback.builder()
-                        .feedback("Feedback#2")
-                        .student(student2)
-                        .course(course2)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createCourseFeedback("2", student2, course2)
         );
 
-        Student student3 = entityManager.persist(createStudent("3"));
-        Course course3 = entityManager.persist(createCourse("3"));
+        Student student3 = entityManager.persist(EntityCreatorUtil.createStudent("3"));
+        Course course3 = entityManager.persist(EntityCreatorUtil.createCourse("3", instructors));
 
         CourseFeedback courseFeedback3 = entityManager.persist(
-                CourseFeedback.builder()
-                        .feedback("Feedback#3")
-                        .student(student3)
-                        .course(course3)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createCourseFeedback("3", student3, course3)
         );
 
         List<CourseFeedback> courseFeedbacks = courseFeedbackRepository.findAll();
@@ -141,34 +109,18 @@ public class CourseFeedbackRepositoryTest {
 
     @Test
     public void should_find_course_feedback_by_id() {
-        Student student1 = entityManager.persist(createStudent("1"));
-        Course course1 = entityManager.persist(createCourse("1"));
+        Student student1 = entityManager.persist(EntityCreatorUtil.createStudent("1"));
+        Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructors));
 
         CourseFeedback courseFeedback1 = entityManager.persist(
-                CourseFeedback.builder()
-                        .feedback("Feedback#1")
-                        .student(student1)
-                        .course(course1)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createCourseFeedback("1", student1, course1)
         );
 
-        Student student2 = entityManager.persist(createStudent("2"));
-        Course course2 = entityManager.persist(createCourse("2"));
+        Student student2 = entityManager.persist(EntityCreatorUtil.createStudent("2"));
+        Course course2 = entityManager.persist(EntityCreatorUtil.createCourse("2", instructors));
 
         CourseFeedback courseFeedback2 = entityManager.persist(
-                CourseFeedback.builder()
-                        .feedback("Feedback#2")
-                        .student(student2)
-                        .course(course2)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createCourseFeedback("2", student2, course2)
         );
 
         Optional<CourseFeedback> foundCourseOpt = courseFeedbackRepository.findById(courseFeedback2.getId());
@@ -180,49 +132,29 @@ public class CourseFeedbackRepositoryTest {
 
     @Test
     public void should_find_course_feedbacks_by_feedback_containing_string() {
-        Student student1 = entityManager.persist(createStudent("1"));
-        Course course1 = entityManager.persist(createCourse("1"));
+        Student student1 = entityManager.persist(EntityCreatorUtil.createStudent("1"));
+        Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructors));
 
         CourseFeedback courseFeedback1 = entityManager.persist(
-                CourseFeedback.builder()
-                        .feedback("Feedback#1")
-                        .student(student1)
-                        .course(course1)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createCourseFeedback("1", student1, course1)
         );
 
-        Student student2 = entityManager.persist(createStudent("2"));
-        Course course2 = entityManager.persist(createCourse("2"));
+        Student student2 = entityManager.persist(EntityCreatorUtil.createStudent("2"));
+        Course course2 = entityManager.persist(EntityCreatorUtil.createCourse("2", instructors));
 
+        CourseFeedback courseFeedback2ToSave = EntityCreatorUtil.createCourseFeedback("2", student2, course2);
+        courseFeedback2ToSave.setFeedback("FEEDBACKtestFEEDBACKLOLOLO");
         CourseFeedback courseFeedback2 = entityManager.persist(
-                CourseFeedback.builder()
-                        .feedback("Feedback#2 test")
-                        .student(student2)
-                        .course(course2)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                courseFeedback2ToSave
         );
 
-        Student student3 = entityManager.persist(createStudent("3"));
-        Course course3 = entityManager.persist(createCourse("3"));
+        Student student3 = entityManager.persist(EntityCreatorUtil.createStudent("3"));
+        Course course3 = entityManager.persist(EntityCreatorUtil.createCourse("3", instructors));
 
+        CourseFeedback courseFeedback3ToSave = EntityCreatorUtil.createCourseFeedback("3", student3, course3);
+        courseFeedback3ToSave.setFeedback("FEEDBACKtetFEEDBACKLOLOLOtest");
         CourseFeedback courseFeedback3 = entityManager.persist(
-                CourseFeedback.builder()
-                        .feedback("Feedback#3 test LOL")
-                        .student(student3)
-                        .course(course3)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                courseFeedback3ToSave
         );
 
         List<CourseFeedback> courseFeedbacks = courseFeedbackRepository.findByFeedbackContaining("test");
@@ -232,34 +164,18 @@ public class CourseFeedbackRepositoryTest {
 
     @Test
     public void should_update_course_feedback_by_id() {
-        Student student1 = entityManager.persist(createStudent("1"));
-        Course course1 = entityManager.persist(createCourse("1"));
+        Student student1 = entityManager.persist(EntityCreatorUtil.createStudent("1"));
+        Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructors));
 
         CourseFeedback courseFeedback1 = entityManager.persist(
-                CourseFeedback.builder()
-                        .feedback("Feedback#1")
-                        .student(student1)
-                        .course(course1)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createCourseFeedback("1", student1, course1)
         );
 
-        Student student2 = entityManager.persist(createStudent("2"));
-        Course course2 = entityManager.persist(createCourse("2"));
+        Student student2 = entityManager.persist(EntityCreatorUtil.createStudent("2"));
+        Course course2 = entityManager.persist(EntityCreatorUtil.createCourse("2", instructors));
 
         CourseFeedback courseFeedback2 = entityManager.persist(
-                CourseFeedback.builder()
-                        .feedback("Feedback#2 test")
-                        .student(student2)
-                        .course(course2)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createCourseFeedback("2", student2, course2)
         );
 
         Optional<CourseFeedback> courseOpt = courseFeedbackRepository.findById(courseFeedback2.getId());
@@ -280,49 +196,25 @@ public class CourseFeedbackRepositoryTest {
 
     @Test
     public void should_delete_course_feedback_by_id() {
-        Student student1 = entityManager.persist(createStudent("1"));
-        Course course1 = entityManager.persist(createCourse("1"));
+        Student student1 = entityManager.persist(EntityCreatorUtil.createStudent("1"));
+        Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructors));
 
         CourseFeedback courseFeedback1 = entityManager.persist(
-                CourseFeedback.builder()
-                        .feedback("Feedback#1")
-                        .student(student1)
-                        .course(course1)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createCourseFeedback("1", student1, course1)
         );
 
-        Student student2 = entityManager.persist(createStudent("2"));
-        Course course2 = entityManager.persist(createCourse("2"));
+        Student student2 = entityManager.persist(EntityCreatorUtil.createStudent("2"));
+        Course course2 = entityManager.persist(EntityCreatorUtil.createCourse("2", instructors));
 
         CourseFeedback courseFeedback2 = entityManager.persist(
-                CourseFeedback.builder()
-                        .feedback("Feedback#2 test")
-                        .student(student2)
-                        .course(course2)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createCourseFeedback("2", student2, course2)
         );
 
-        Student student3 = entityManager.persist(createStudent("3"));
-        Course course3 = entityManager.persist(createCourse("3"));
+        Student student3 = entityManager.persist(EntityCreatorUtil.createStudent("3"));
+        Course course3 = entityManager.persist(EntityCreatorUtil.createCourse("3", instructors));
 
         CourseFeedback courseFeedback3 = entityManager.persist(
-                CourseFeedback.builder()
-                        .feedback("Feedback#3 test LOL")
-                        .student(student3)
-                        .course(course3)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createCourseFeedback("3", student3, course3)
         );
 
         courseFeedbackRepository.deleteById(courseFeedback2.getId());
@@ -334,23 +226,15 @@ public class CourseFeedbackRepositoryTest {
 
     @Test
     public void should_delete_all_course_feedbacks() {
-        Student student1 = entityManager.persist(createStudent("1"));
-        Course course1 = entityManager.persist(createCourse("1"));
+        Student student1 = entityManager.persist(EntityCreatorUtil.createStudent("1"));
+        Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructors));
 
         CourseFeedback courseFeedback1 = entityManager.persist(
-                CourseFeedback.builder()
-                        .feedback("Feedback#1")
-                        .student(student1)
-                        .course(course1)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createCourseFeedback("1", student1, course1)
         );
 
-        Student student2 = entityManager.persist(createStudent("2"));
-        Course course2 = entityManager.persist(createCourse("2"));
+        Student student2 = entityManager.persist(EntityCreatorUtil.createStudent("2"));
+        Course course2 = entityManager.persist(EntityCreatorUtil.createCourse("2", instructors));
 
         CourseFeedback courseFeedback2 = entityManager.persist(
                 CourseFeedback.builder()

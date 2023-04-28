@@ -9,13 +9,13 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.DiscriminatorFormula;
 import org.hibernate.annotations.DiscriminatorOptions;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Set;
 
 /**
  * Entity class for User
@@ -24,13 +24,9 @@ import java.util.Set;
 @Entity(name = "User")
 @Table(name = "users", schema = "course_management")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(
-        discriminatorType = DiscriminatorType.STRING,
-        name = "role",
-        columnDefinition = "VARCHAR(20)"
-)
+@DiscriminatorFormula("role") // do not use discriminator column since it filters out column when work with entity
 @DiscriminatorValue("null")
-@DiscriminatorOptions(insert = false)
+@DiscriminatorOptions(insert = false, force = true)
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
@@ -39,7 +35,7 @@ import java.util.Set;
 public class User extends BaseEntity implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id")
+    @Column(name = "id")
     protected Long id;
 
     @NotNull
@@ -63,8 +59,9 @@ public class User extends BaseEntity implements UserDetails {
     @JsonIgnore
     protected String password;
 
+    @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", insertable = false, updatable = false)
+    @Column(name = "role")
     protected Roles role;
 
     /**

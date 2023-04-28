@@ -1,25 +1,83 @@
 package com.example.courseapi.service;
 
+import com.example.courseapi.config.args.generic.Filters;
 import com.example.courseapi.domain.User;
 import com.example.courseapi.domain.enums.Roles;
-import com.example.courseapi.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.rest.webmvc.ResourceNotFoundException;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
+import com.example.courseapi.dto.UserRequestDTO;
+import com.example.courseapi.dto.UserResponseDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
+/**
+ * Service Interface for managing {@link User} entity.
+ */
 public interface UserService {
 
-    List<User> getUsers();
+    /**
+     * Get all users based on filters and pageable information.
+     *
+     * @param filters  the optional filters to apply when searching for courses
+     * @param pageable the pagination information to apply when retrieving the courses
+     * @return a page of user response DTOs
+     */
+    Page<UserResponseDTO> getUsers(Filters filters, Pageable pageable);
 
-    User saveUser(User user);
+    /**
+     * Create a new user.
+     *
+     * @param userDTO the user request DTO to create a new user
+     * @return the user response DTO of the newly created user
+     */
+    UserResponseDTO saveUser(UserRequestDTO userDTO);
 
+    /**
+     * Update an existing user.
+     *
+     * @param userDTO the user request DTO to update an existing user
+     * @return the user response DTO of the updated user
+     */
+    UserResponseDTO updateUser(UserRequestDTO userDTO);
+
+    /**
+     * Add a role to an existing user.
+     *
+     * @param email the email of the user to add the role to
+     * @param role  the role to add to the user
+     */
     void addRoleToUser(String email, Roles role);
 
-    User findUserByEmail(String email);
+    /**
+     * Find a user by email.
+     *
+     * @param email the email of the user to find
+     * @return the user response DTO of the found user
+     */
+    UserResponseDTO findUserByEmail(String email);
 
-    User getUserById(Long id);
+    /**
+     * Find a user by ID.
+     *
+     * @param id the ID of the user to find
+     * @return the user response DTO of the found user
+     */
+    UserResponseDTO getUserById(Long id);
+
+    /**
+     * Map a current user to a user response DTO.
+     *
+     * @param currentUser the current user to map
+     * @return the user response DTO of the current user
+     */
+    UserResponseDTO mapCurrentUser(User currentUser);
+
+    /**
+     * Delete a user by ID.
+     *
+     * @param userId the ID of the user to delete
+     */
+    void delete(Long userId);
+
+    UserResponseDTO assingRoleForUser(Long userId, Roles role);
 }

@@ -1,41 +1,48 @@
 package com.example.courseapi.config;
 
-import com.example.courseapi.controller.error.ExceptionTranslator;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.courseapi.config.args.resolver.DefaultFiltersArgumentResolver;
+import com.example.courseapi.controller.ExceptionTranslator;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.format.support.FormattingConversionService;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.stereotype.Component;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.Validator;
+import org.springframework.web.context.WebApplicationContext;
 
-import java.util.List;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 
 @Component
+@RequiredArgsConstructor
 public class MockMvcBuilder {
 
-    @Autowired
-    private MappingJackson2HttpMessageConverter[] jacksonMessageConverters;
-
-    @Autowired
-    private PageableHandlerMethodArgumentResolver pageableArgumentResolver;
-
-    @Autowired
-    private ExceptionTranslator exceptionTranslator;
-
-    @Autowired
-    private Validator validator;
+    private final MappingJackson2HttpMessageConverter[] jacksonMessageConverters;
+    private final PageableHandlerMethodArgumentResolver pageableArgumentResolver;
+    private final DefaultFiltersArgumentResolver filtersArgumentResolver;
+    private final ExceptionTranslator exceptionTranslator;
+    private final Validator validator;
+    private final WebApplicationContext webApplicationContext;
 
     public MockMvc forControllers(Object... forController) {
-        return MockMvcBuilders.standaloneSetup(forController)
-                .setCustomArgumentResolvers(pageableArgumentResolver)
+        return MockMvcBuilders
+                .standaloneSetup(forController)
+                .setCustomArgumentResolvers(pageableArgumentResolver, filtersArgumentResolver, createAuthenticationHandler())
                 .setControllerAdvice(exceptionTranslator)
                 .setConversionService(createFormattingConversionService())
                 .setMessageConverters(jacksonMessageConverters)
-                .setValidator(validator).build();
+                .setValidator(validator)
+                .build();
+    }
+
+    public MockMvc fromSecurityWebAppContext() {
+        return MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .apply(springSecurity())
+                .build();
     }
 
     /**
@@ -49,6 +56,10 @@ public class MockMvcBuilder {
         registrar.setUseIsoFormat(true);
         registrar.registerFormatters(dfcs);
         return dfcs;
+    }
+
+    public static AuthenticationPrincipalArgumentResolver createAuthenticationHandler() {
+        return new AuthenticationPrincipalArgumentResolver();
     }
 
 

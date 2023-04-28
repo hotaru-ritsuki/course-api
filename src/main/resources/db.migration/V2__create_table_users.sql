@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS course_management.users
 (
-    user_id       SERIAL constraint pk_users primary key,
+    id       SERIAL constraint pk_users primary key,
     first_name    VARCHAR(50)  NOT NULL,
     last_name     VARCHAR(50)  NOT NULL,
     email         VARCHAR(50)  NOT NULL,

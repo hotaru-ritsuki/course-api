@@ -3,7 +3,7 @@ package com.example.courseapi.config.annotation;
 import com.example.courseapi.CourseApiApplication;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.lang.annotation.*;
@@ -15,6 +15,6 @@ import java.lang.annotation.*;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = CourseApiApplication.class)
 //@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-//@ActiveProfiles({"junit", "dev-auth"})
+@ActiveProfiles({"junit"})
 public @interface DefaultTestConfiguration {
 }

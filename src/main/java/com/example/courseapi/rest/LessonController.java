@@ -1,12 +1,15 @@
 package com.example.courseapi.rest;
 
 import com.example.courseapi.config.EntityHeaderCreator;
-import com.example.courseapi.controller.util.ResponseUtil;
+import com.example.courseapi.config.args.generic.Filters;
+import com.example.courseapi.util.ResponseUtil;
 import com.example.courseapi.dto.LessonDTO;
 import com.example.courseapi.exception.SystemException;
 import com.example.courseapi.exception.code.ErrorCode;
 import com.example.courseapi.service.LessonService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -74,8 +77,8 @@ public class LessonController {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of lessons in body.
      */
     @GetMapping("/lessons")
-    public List<LessonDTO> getAllLessons() {
-        return lessonService.findAll();
+    public Page<LessonDTO> getAllLessons(Filters filters, Pageable pageable) {
+        return lessonService.findAll(filters, pageable);
     }
 
     /**
@@ -103,5 +106,18 @@ public class LessonController {
         return ResponseEntity.noContent()
                 .headers(entityHeaderCreator.createEntityDeletionAlert(ENTITY_NAME, id.toString()))
                 .build();
+    }
+
+    /**
+     * {@code GET  /lessons/:id} : get the "id" lesson.
+     *
+     * @param courseId the id of the lessonDTO to retrieve.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the lessonDTO,
+     * or with status {@code 404 (Not Found)}.
+     */
+    @GetMapping("/lessons/courses/{courseId}")
+    public ResponseEntity<List<LessonDTO>> getLessonsForCourse(@PathVariable Long courseId) {
+        List<LessonDTO> lessonDTOs = lessonService.findByCourseId(courseId);
+        return ResponseEntity.ok(lessonDTOs);
     }
 }

@@ -5,21 +5,26 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity(name = "Student")
 @DiscriminatorValue("STUDENT")
 @Data
-@EqualsAndHashCode(callSuper = true)
+@ToString(exclude = {"studentCourses"})
+@EqualsAndHashCode(callSuper = true, exclude = {"studentCourses"})
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
 public class Student extends User {
 
     @Size(max = 5)
-    @ManyToMany(mappedBy = "students")
-    private Set<Course> studentCourses;
-
-    @OneToMany(mappedBy = "student")
-    private Set<CourseFeedback> courseFeedbacks;
+    @Builder.Default
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            schema = "course_management",
+            name = "courses_students",
+            joinColumns = @JoinColumn(name = "student_id"),
+            inverseJoinColumns = @JoinColumn(name = "course_id"))
+    private Set<Course> studentCourses = new HashSet<>();
 }

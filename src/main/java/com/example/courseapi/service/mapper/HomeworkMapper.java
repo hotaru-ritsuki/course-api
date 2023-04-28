@@ -1,10 +1,9 @@
 package com.example.courseapi.service.mapper;
 
 import com.example.courseapi.domain.Homework;
-import com.example.courseapi.domain.Lesson;
 import com.example.courseapi.dto.HomeworkDTO;
-import com.example.courseapi.dto.LessonDTO;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.springframework.stereotype.Component;
 
 /**
@@ -13,8 +12,13 @@ import org.springframework.stereotype.Component;
 @Mapper(componentModel = "spring")
 @Component
 public interface HomeworkMapper extends EntityMapper<HomeworkDTO, Homework> {
+
+    @Mapping(source = "lesson.id", target = "lessonId")
+    @Mapping(source = "student.id", target = "studentId")
     HomeworkDTO toDto(Homework homework);
 
+    @Mapping(source = "lessonId", target = "lesson.id")
+    @Mapping(source = "studentId", target = "student.id")
     Homework toEntity(HomeworkDTO homeworkDTO);
 
     default Homework fromId(Long id) {

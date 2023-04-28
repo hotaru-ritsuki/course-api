@@ -1,11 +1,15 @@
 package com.example.courseapi.service.impl;
 
+import com.example.courseapi.config.args.generic.Filters;
+import com.example.courseapi.config.args.specs.SpecificationBuilder;
 import com.example.courseapi.domain.CourseFeedback;
 import com.example.courseapi.dto.CourseFeedbackDTO;
 import com.example.courseapi.repository.CourseFeedbackRepository;
 import com.example.courseapi.service.CourseFeedbackService;
 import com.example.courseapi.service.mapper.CourseFeedbackMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -31,8 +35,9 @@ public class CourseFeedbackServiceImpl implements CourseFeedbackService {
     }
 
     @Override
-    public List<CourseFeedbackDTO> findAll() {
-        return courseFeedbackMapper.toDto(courseFeedbackRepository.findAll());
+    public Page<CourseFeedbackDTO> findAll(Filters filters, Pageable pageable) {
+        return courseFeedbackRepository.findAll(new SpecificationBuilder<CourseFeedback>(filters).build(), pageable)
+                .map(courseFeedbackMapper::toDto);
     }
 
     @Override

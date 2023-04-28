@@ -8,10 +8,13 @@ import com.example.courseapi.domain.Student;
 import com.example.courseapi.dto.CourseFeedbackDTO;
 import com.example.courseapi.repository.CourseFeedbackRepository;
 import com.example.courseapi.service.mapper.CourseFeedbackMapper;
+import com.example.courseapi.util.EntityCreatorUtil;
 import com.example.courseapi.util.TestUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
@@ -27,7 +30,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @DefaultTestConfiguration
 class CourseFeedbackControllerTest {
@@ -51,10 +53,16 @@ class CourseFeedbackControllerTest {
 
     private MockMvc restCourseFeedbackMockMvc;
 
+    private AutoCloseable closable;
+
+    @AfterEach
+    public void destroy() throws Exception {
+        closable.close();
+    }
 
     @BeforeEach
     public void setup() {
-        MockitoAnnotations.openMocks(this);
+        this.closable = MockitoAnnotations.openMocks(this);
         this.restCourseFeedbackMockMvc = mockMvcBuilder.forControllers(courseFeedbackController);
     }
 
@@ -71,7 +79,7 @@ class CourseFeedbackControllerTest {
         // Add required entity
         Student student;
         if (TestUtil.findOne(em, Student.class).isEmpty()) {
-            student = UserControllerTest.createStudentEntity();
+            student = EntityCreatorUtil.createStudent();
             em.persist(student);
             em.flush();
         } else {
@@ -80,7 +88,7 @@ class CourseFeedbackControllerTest {
         courseFeedback.setStudent(student);
         Course course;
         if (TestUtil.findOne(em, Course.class).isEmpty()) {
-            course = CourseControllerTest.createEntity();
+            course = CourseControllerTest.createEntity(em);
             em.persist(course);
             em.flush();
         } else {
@@ -203,6 +211,21 @@ class CourseFeedbackControllerTest {
         // Validate the CourseFeedback in the database
         databaseSizeAfterCreate = courseFeedbackRepository.count();
         assertEquals(databaseSizeAfterCreate, databaseSizeBeforeCreate + 1);
+    }
+
+    @Test
+    @Transactional
+    public void getAllCourseFeedbacks() throws Exception {
+        // Initialize the database
+        CourseFeedback courseFeedback = courseFeedbackRepository.saveAndFlush(createEntity(entityManager));
+
+        // Get all the courseFeedbackList
+        restCourseFeedbackMockMvc.perform(
+                get("/api/v1/course-feedbacks?sort=id,desc&filter=id:equals:" + courseFeedback.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.content", Matchers.hasSize(1)));
     }
 
     @Test

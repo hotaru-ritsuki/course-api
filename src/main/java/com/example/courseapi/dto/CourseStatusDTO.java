@@ -12,4 +12,5 @@ import lombok.EqualsAndHashCode;
 public class CourseStatusDTO extends CourseDTO {
 
     private CourseStatus courseStatus;
+    private Double finalGrade;
 }

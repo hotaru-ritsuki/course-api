@@ -1,11 +1,13 @@
 package com.example.courseapi.security.service.impl;
 
+import com.example.courseapi.config.JwtProperties;
 import com.example.courseapi.security.service.JwtService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -17,11 +19,10 @@ import java.util.Objects;
 import java.util.function.Function;
 
 @Service
+@RequiredArgsConstructor
 public class JwtServiceImpl implements JwtService {
 
-    private static final String SIGNING_KEY = "24432646294A404E635266556A586E5A7234753778214125442A472D4B615064";
-    private static final Integer REFRESH_TOKEN_EXPIRE_TIMEOUT = 60 * 1000;
-    private static final Integer ACCESS_TOKEN_EXPIRE_TIMEOUT = 24 * 60 * 1000;
+    private final JwtProperties jwtProperties;
 
     @Override
     public String extractUsername(String jwtToken) {
@@ -70,17 +71,13 @@ public class JwtServiceImpl implements JwtService {
                 .setClaims(extraClaims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + getTokenTimeout(isAccessToken)))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtProperties.getTokenTimeout(isAccessToken)))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    private Integer getTokenTimeout(boolean isAccessToken) {
-        return isAccessToken ? ACCESS_TOKEN_EXPIRE_TIMEOUT : REFRESH_TOKEN_EXPIRE_TIMEOUT;
-    }
-
     private Key getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SIGNING_KEY);
+        byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.getSigningKey());
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }

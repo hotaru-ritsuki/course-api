@@ -49,29 +49,41 @@ public class SecurityConfig {
     private final JwtService jwtService;
     private final UserRepository userRepository;
 
+    /**
+     * SecurityFilterChain configuration bean
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             AuthenticationProvider authenticationProvider,
-            UserDetailsService userDetailsService
+            UserDetailsService userDetailsService,
+            JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint
     ) throws Exception {
+        log.debug("Configuring SecurityFilterChain...");
         http
                 .csrf().disable()
                 .authorizeHttpRequests()
                     .requestMatchers("/api/v1/auth/**").permitAll()
                     .anyRequest().authenticated()
                 .and()
+                .exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                .and()
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(new JwtAuthenticationFilter(jwtService, userDetailsService), UsernamePasswordAuthenticationFilter.class);
-
+        log.debug("SecurityFilterChain successfully created with authentication provider {} and user details service {}",
+                authenticationProvider.getClass().getSimpleName(), userDetailsService.getClass().getSimpleName());
         return http.build();
     }
 
+    /**
+     * WebSecurityCustomizer configuration bean
+     */
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
+        log.debug("Configuring WebSecurityCustomizer...");
         return (web) -> {
             String[] filteredRequestMatchers = Stream.of(swaggerUIPath, swaggerAPIDocsPath, swaggerResourceUrl)
                 .filter(StringUtils::isNotBlank)
@@ -80,9 +92,15 @@ public class SecurityConfig {
                 .debug(debugRequests)
                 .ignoring()
                 .requestMatchers(filteredRequestMatchers);
+            log.debug("WebSecurityCustomizer successfully created with filtered request matchers: {} and debug flag: {}",
+                    filteredRequestMatchers, debugRequests);
         };
     }
 
+    /**
+     * AuthenticationProvider configuration bean
+     * @return  DaoAuthenticationProvider implementation
+     */
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -96,11 +114,19 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
+    /**
+     * PasswordEncoder configuration bean
+     * @return BCryptPasswordEncoder implementation
+     */
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * UserDetails configuration bean
+     * @return UserDetails implementation using UserRepository
+     */
     @Bean
     public UserDetailsService userDetailsService() {
         return email -> userRepository.findByEmail(email).orElseThrow(UserNotFoundException::new);

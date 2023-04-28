@@ -1,15 +1,13 @@
 package com.example.courseapi.domain;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -25,7 +23,7 @@ import java.util.Set;
 public class Lesson extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "lesson_id")
+    @Column(name = "id")
     private Long id;
 
     @NotNull
@@ -38,10 +36,11 @@ public class Lesson extends BaseEntity {
     @Column(name = "description")
     private String description;
 
-    @NotNull
     @ManyToOne
+    @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
+    @Builder.Default
     @OneToMany(mappedBy = "lesson")
-    private Set<Submission> submissions;
+    private Set<Submission> submissions = new HashSet<>();
 }

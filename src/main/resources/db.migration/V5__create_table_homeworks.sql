@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS course_management.homeworks
 (
-    homework_id   SERIAL constraint pk_homeworks primary key,
+    id   SERIAL constraint pk_homeworks primary key,
     student_id    INTEGER,
     lesson_id     INTEGER,
     title         VARCHAR(50)  NOT NULL,
@@ -9,6 +9,6 @@ CREATE TABLE IF NOT EXISTS course_management.homeworks
     modified_date timestamp    NOT NULL,
     created_by    VARCHAR(50)  NOT NULL,
     modified_by   VARCHAR(50)  NOT NULL,
-    constraint fk_homeworks_student_id foreign key (student_id) references course_management.users (user_id),
-    constraint fk_homeworks_lesson_id foreign key (lesson_id) references course_management.lessons (lesson_id)
+    constraint fk_homeworks_student_id foreign key (student_id) references course_management.users (id),
+    constraint fk_homeworks_lesson_id foreign key (lesson_id) references course_management.lessons (id)
 );

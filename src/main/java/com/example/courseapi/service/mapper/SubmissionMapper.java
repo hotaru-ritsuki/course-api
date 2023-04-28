@@ -3,6 +3,8 @@ package com.example.courseapi.service.mapper;
 import com.example.courseapi.domain.Submission;
 import com.example.courseapi.dto.SubmissionDTO;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Mappings;
 import org.springframework.stereotype.Component;
 
 /**
@@ -12,8 +14,18 @@ import org.springframework.stereotype.Component;
 @Component
 public interface SubmissionMapper extends EntityMapper<SubmissionDTO, Submission> {
 
-    SubmissionDTO toDto(Submission lesson);
+    @Mappings({
+            @Mapping(source = "student.id", target = "studentId"),
+            @Mapping(source = "lesson.id", target = "lessonId"),
+    })
+    SubmissionDTO toDto(Submission submission);
 
-    Submission toEntity(SubmissionDTO lessonDTO);
+    @Mappings({
+            @Mapping(source = "studentId", target = "student.id"),
+            @Mapping(source = "studentId", target = "submissionId.studentId"),
+            @Mapping(source = "lessonId", target = "lesson.id"),
+            @Mapping(source = "lessonId", target = "submissionId.lessonId"),
+    })
+    Submission toEntity(SubmissionDTO submissionDTO);
 }
 

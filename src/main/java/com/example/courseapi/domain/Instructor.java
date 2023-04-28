@@ -1,22 +1,28 @@
 package com.example.courseapi.domain;
 
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity(name = "Instructor")
 @DiscriminatorValue("INSTRUCTOR")
 @Data
-@EqualsAndHashCode(callSuper = true)
+@ToString(exclude = "instructorCourses")
+@EqualsAndHashCode(callSuper = true, exclude = "instructorCourses")
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public class Instructor extends User {
+public final class Instructor extends User {
 
-    @ManyToMany(mappedBy = "instructors")
-    private Set<Course> instructorCourses;
+    @Builder.Default
+    @ManyToMany
+    @JoinTable(
+            schema = "course_management",
+            name = "courses_instructors",
+            joinColumns = @JoinColumn(name = "instructor_id"),
+            inverseJoinColumns = @JoinColumn(name = "course_id"))
+    private Set<Course> instructorCourses = new HashSet<>();
 }

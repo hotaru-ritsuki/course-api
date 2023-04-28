@@ -1,24 +1,21 @@
 package com.example.courseapi.repository;
 
-import com.example.courseapi.config.DefaultRepositoryTestConfiguration;
-import com.example.courseapi.domain.Course;
-import com.example.courseapi.domain.Submission;
-import com.example.courseapi.domain.Lesson;
-import com.example.courseapi.domain.Student;
-import com.example.courseapi.domain.enums.Roles;
+import com.example.courseapi.config.DefaultJPARepositoryTestConfiguration;
+import com.example.courseapi.domain.*;
+import com.example.courseapi.util.EntityCreatorUtil;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SuppressWarnings("unused")
-@DefaultRepositoryTestConfiguration
+@DefaultJPARepositoryTestConfiguration
 public class SubmissionRepositoryTest {
 
     @Autowired
@@ -36,43 +33,24 @@ public class SubmissionRepositoryTest {
     @Autowired
     private CourseRepository courseRepository;
 
-    private static Course createCourse(String uuid) {
-        return Course.builder()
-                .description("Course description #" + uuid)
-                .title("Course title #" +uuid)
-                .createdBy("Anonymous")
-                .createdDate(LocalDateTime.now())
-                .modifiedBy("Anonymous")
-                .modifiedDate(LocalDateTime.now())
-                .build();
+    @Autowired
+    private InstructorRepository instructorRepository;
+
+    private Set<Instructor> instructor;
+    private AutoCloseable closable;
+
+    @AfterEach
+    public void destroy() throws Exception {
+        closable.close();
     }
 
-    private static Lesson createLesson(String uuid, Course course) {
-        return Lesson.builder()
-                .description("Lesson description #" + uuid)
-                .title("Lesson title #" +uuid)
-                .course(course)
-                .createdBy("Anonymous")
-                .createdDate(LocalDateTime.now())
-                .modifiedBy("Anonymous")
-                .modifiedDate(LocalDateTime.now())
-                .build();
+    @BeforeEach
+    public void setup() {
+        this.closable = MockitoAnnotations.openMocks(this);
+        Set<Instructor> instructorSet = new HashSet<>();
+        instructorSet.add(instructorRepository.save(EntityCreatorUtil.createInstructor()));
+        this.instructor = instructorSet;
     }
-
-    private static Student createStudent(String uuid) {
-        return Student.builder()
-                .firstName("FirstName#" + uuid)
-                .lastName("LastName#" + uuid)
-                .email("student" + uuid + "@email.com")
-                .password("TestPassword")
-                .role(Roles.STUDENT)
-                .createdBy("Anonymous")
-                .createdDate(LocalDateTime.now())
-                .modifiedBy("Anonymous")
-                .modifiedDate(LocalDateTime.now())
-                .build();
-    }
-
 
     @Test
     public void should_find_no_submissions_if_repository_is_empty() {
@@ -83,72 +61,38 @@ public class SubmissionRepositoryTest {
 
     @Test
     public void should_store_a_submission() {
-        Course course = courseRepository.save(createCourse("1"));
-        Lesson lesson = lessonRepository.save(createLesson("1", course));
-        Student student = userRepository.save(createStudent("1"));
-        Double grade = new Random().nextDouble(0.0, 100.0);
+        Course course = courseRepository.save(EntityCreatorUtil.createCourse("1", instructor));
+        Lesson lesson = lessonRepository.save(EntityCreatorUtil.createLesson("1", course));
+        Student student = userRepository.save(EntityCreatorUtil.createStudent("1"));
         Submission submission = submissionRepository.save(
-                Submission.builder()
-                        .grade(grade)
-                        .lesson(lesson)
-                        .student(student)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createSubmission("1", lesson, student)
         );
 
-        assertThat(submission).hasFieldOrPropertyWithValue("grade", grade);
         assertThat(submission).hasFieldOrPropertyWithValue("lesson", lesson);
         assertThat(submission).hasFieldOrPropertyWithValue("student", student);
     }
 
     @Test
     public void should_find_all_submissions() {
-        Course course1 = entityManager.persist(createCourse("1"));
-        Lesson lesson1 = lessonRepository.save(createLesson("1", course1));
-        Student student1 = userRepository.save(createStudent("1"));
+        Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
+        Lesson lesson1 = lessonRepository.save(EntityCreatorUtil.createLesson("1", course1));
+        Student student1 = userRepository.save(EntityCreatorUtil.createStudent("1"));
         Submission submission1 = submissionRepository.save(
-                Submission.builder()
-                        .grade(new Random().nextDouble(0.0, 100.0))
-                        .lesson(lesson1)
-                        .student(student1)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createSubmission("1", lesson1, student1)
         );
 
-        Course course2 = entityManager.persist(createCourse("2"));
-        Lesson lesson2 = lessonRepository.save(createLesson("2", course2));
-        Student student2 = userRepository.save(createStudent("2"));
+        Course course2 = entityManager.persist(EntityCreatorUtil.createCourse("2", instructor));
+        Lesson lesson2 = lessonRepository.save(EntityCreatorUtil.createLesson("2", course2));
+        Student student2 = userRepository.save(EntityCreatorUtil.createStudent("2"));
         Submission submission2 = submissionRepository.save(
-                Submission.builder()
-                        .grade(new Random().nextDouble(0.0, 100.0))
-                        .lesson(lesson2)
-                        .student(student2)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createSubmission("2", lesson2, student2)
         );
 
-        Course course3 = entityManager.persist(createCourse("3"));
-        Lesson lesson3 = lessonRepository.save(createLesson("3", course3));
-        Student student3 = userRepository.save(createStudent("3"));
+        Course course3 = entityManager.persist(EntityCreatorUtil.createCourse("3", instructor));
+        Lesson lesson3 = lessonRepository.save(EntityCreatorUtil.createLesson("3", course3));
+        Student student3 = userRepository.save(EntityCreatorUtil.createStudent("3"));
         Submission submission3 = submissionRepository.save(
-                Submission.builder()
-                        .grade(new Random().nextDouble(0.0, 100.0))
-                        .lesson(lesson3)
-                        .student(student3)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createSubmission("3", lesson3, student3)
         );
 
         List<Submission> submissions = submissionRepository.findAll();
@@ -159,34 +103,18 @@ public class SubmissionRepositoryTest {
 
     @Test
     public void should_find_submission_by_id() {
-        Course course1 = entityManager.persist(createCourse("1"));
-        Lesson lesson1 = lessonRepository.save(createLesson("1", course1));
-        Student student1 = userRepository.save(createStudent("1"));
+        Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
+        Lesson lesson1 = lessonRepository.save(EntityCreatorUtil.createLesson("1", course1));
+        Student student1 = userRepository.save(EntityCreatorUtil.createStudent("1"));
         Submission submission1 = submissionRepository.save(
-                Submission.builder()
-                        .grade(new Random().nextDouble(0.0, 100.0))
-                        .lesson(lesson1)
-                        .student(student1)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createSubmission("1", lesson1, student1)
         );
 
-        Course course2 = entityManager.persist(createCourse("2"));
-        Lesson lesson2 = lessonRepository.save(createLesson("2", course2));
-        Student student2 = userRepository.save(createStudent("2"));
+        Course course2 = entityManager.persist(EntityCreatorUtil.createCourse("2", instructor));
+        Lesson lesson2 = lessonRepository.save(EntityCreatorUtil.createLesson("2", course2));
+        Student student2 = userRepository.save(EntityCreatorUtil.createStudent("2"));
         Submission submission2 = submissionRepository.save(
-                Submission.builder()
-                        .grade(new Random().nextDouble(0.0, 100.0))
-                        .lesson(lesson2)
-                        .student(student2)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createSubmission("2", lesson2, student2)
         );
 
         Optional<Submission> foundSubmissionOpt = submissionRepository
@@ -199,49 +127,25 @@ public class SubmissionRepositoryTest {
 
     @Test
     public void should_find_submissions_by_student() {
-        Course course1 = entityManager.persist(createCourse("1"));
-        Lesson lesson1 = lessonRepository.save(createLesson("1", course1));
-        Student student1 = userRepository.save(createStudent("1"));
+        Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
+        Lesson lesson1 = lessonRepository.save(EntityCreatorUtil.createLesson("1", course1));
+        Student student1 = userRepository.save(EntityCreatorUtil.createStudent("1"));
         Submission submission1 = submissionRepository.save(
-                Submission.builder()
-                        .grade(new Random().nextDouble(0.0, 100.0))
-                        .lesson(lesson1)
-                        .student(student1)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createSubmission("1", lesson1, student1)
         );
         // Set student for two submissions
-        Student student2 = userRepository.save(createStudent("2"));
+        Student student2 = userRepository.save(EntityCreatorUtil.createStudent("2"));
 
-        Course course2 = entityManager.persist(createCourse("2"));
-        Lesson lesson2 = lessonRepository.save(createLesson("2", course2));
+        Course course2 = entityManager.persist(EntityCreatorUtil.createCourse("2", instructor));
+        Lesson lesson2 = lessonRepository.save(EntityCreatorUtil.createLesson("2", course2));
         Submission submission2 = submissionRepository.save(
-                Submission.builder()
-                        .grade(new Random().nextDouble(0.0, 100.0))
-                        .lesson(lesson2)
-                        .student(student2)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createSubmission("2", lesson2, student2)
         );
 
-        Course course3 = entityManager.persist(createCourse("3"));
-        Lesson lesson3 = lessonRepository.save(createLesson("3", course3));
+        Course course3 = entityManager.persist(EntityCreatorUtil.createCourse("3", instructor));
+        Lesson lesson3 = lessonRepository.save(EntityCreatorUtil.createLesson("3", course3));
         Submission submission3 = submissionRepository.save(
-                Submission.builder()
-                        .grade(new Random().nextDouble(0.0, 100.0))
-                        .lesson(lesson3)
-                        .student(student2)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createSubmission("3", lesson3, student2)
         );
 
         List<Submission> submissions = submissionRepository.findAllByStudentId(student2.getId());
@@ -251,47 +155,23 @@ public class SubmissionRepositoryTest {
 
     @Test
     public void should_find_submissions_by_lesson() {
-        Course course1 = entityManager.persist(createCourse("1"));
-        Lesson lesson1 = lessonRepository.save(createLesson("1", course1));
-        Student student1 = userRepository.save(createStudent("1"));
+        Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
+        Lesson lesson1 = lessonRepository.save(EntityCreatorUtil.createLesson("1", course1));
+        Student student1 = userRepository.save(EntityCreatorUtil.createStudent("1"));
         Submission submission1 = submissionRepository.save(
-                Submission.builder()
-                        .grade(new Random().nextDouble(0.0, 100.0))
-                        .lesson(lesson1)
-                        .student(student1)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createSubmission("1", lesson1, student1)
         );
         // Set student for two submissions
-        Student student2 = userRepository.save(createStudent("2"));
-        Course course2 = entityManager.persist(createCourse("2"));
-        Lesson lesson2 = lessonRepository.save(createLesson("2", course2));
+        Course course2 = entityManager.persist(EntityCreatorUtil.createCourse("2", instructor));
+        Lesson lesson2 = lessonRepository.save(EntityCreatorUtil.createLesson("2", course2));
+        Student student2 = userRepository.save(EntityCreatorUtil.createStudent("2"));
         Submission submission2 = submissionRepository.save(
-                Submission.builder()
-                        .grade(new Random().nextDouble(0.0, 100.0))
-                        .lesson(lesson2)
-                        .student(student2)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createSubmission("2", lesson2, student2)
         );
 
-        Student student3 = userRepository.save(createStudent("3"));
+        Student student3 = userRepository.save(EntityCreatorUtil.createStudent("3"));
         Submission submission3 = submissionRepository.save(
-                Submission.builder()
-                        .grade(new Random().nextDouble(0.0, 100.0))
-                        .lesson(lesson1)
-                        .student(student3)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createSubmission("3", lesson1, student3)
         );
 
         List<Submission> submissions = submissionRepository.findAllByLessonId(lesson1.getId());
@@ -301,34 +181,18 @@ public class SubmissionRepositoryTest {
 
     @Test
     public void should_update_submission_by_id() {
-        Course course1 = entityManager.persist(createCourse("1"));
-        Lesson lesson1 = lessonRepository.save(createLesson("1", course1));
-        Student student1 = userRepository.save(createStudent("1"));
+        Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
+        Lesson lesson1 = lessonRepository.save(EntityCreatorUtil.createLesson("1", course1));
+        Student student1 = userRepository.save(EntityCreatorUtil.createStudent("1"));
         Submission submission1 = submissionRepository.save(
-                Submission.builder()
-                        .grade(new Random().nextDouble(0.0, 100.0))
-                        .lesson(lesson1)
-                        .student(student1)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createSubmission("1", lesson1, student1)
         );
 
-        Course course2 = entityManager.persist(createCourse("2"));
-        Lesson lesson2 = lessonRepository.save(createLesson("2", course2));
-        Student student2 = userRepository.save(createStudent("2"));
+        Course course2 = entityManager.persist(EntityCreatorUtil.createCourse("2", instructor));
+        Lesson lesson2 = lessonRepository.save(EntityCreatorUtil.createLesson("2", course2));
+        Student student2 = userRepository.save(EntityCreatorUtil.createStudent("2"));
         Submission submission2 = submissionRepository.save(
-                Submission.builder()
-                        .grade(new Random().nextDouble(0.0, 100.0))
-                        .lesson(lesson2)
-                        .student(student2)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createSubmission("2", lesson2, student2)
         );
 
         Optional<Submission> submissionOpt = submissionRepository
@@ -352,49 +216,25 @@ public class SubmissionRepositoryTest {
 
     @Test
     public void should_delete_submission_by_id() {
-        Course course1 = entityManager.persist(createCourse("1"));
-        Lesson lesson1 = lessonRepository.save(createLesson("1", course1));
-        Student student1 = userRepository.save(createStudent("1"));
+        Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
+        Lesson lesson1 = lessonRepository.save(EntityCreatorUtil.createLesson("1", course1));
+        Student student1 = userRepository.save(EntityCreatorUtil.createStudent("1"));
         Submission submission1 = submissionRepository.save(
-                Submission.builder()
-                        .grade(new Random().nextDouble(0.0, 100.0))
-                        .lesson(lesson1)
-                        .student(student1)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createSubmission("1", lesson1, student1)
         );
 
-        Course course2 = entityManager.persist(createCourse("2"));
-        Lesson lesson2 = lessonRepository.save(createLesson("2", course2));
-        Student student2 = userRepository.save(createStudent("2"));
+        Course course2 = entityManager.persist(EntityCreatorUtil.createCourse("2", instructor));
+        Lesson lesson2 = lessonRepository.save(EntityCreatorUtil.createLesson("2", course2));
+        Student student2 = userRepository.save(EntityCreatorUtil.createStudent("2"));
         Submission submission2 = submissionRepository.save(
-                Submission.builder()
-                        .grade(new Random().nextDouble(0.0, 100.0))
-                        .lesson(lesson2)
-                        .student(student2)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createSubmission("2", lesson2, student2)
         );
 
-        Course course3 = entityManager.persist(createCourse("3"));
-        Lesson lesson3 = lessonRepository.save(createLesson("3", course3));
-        Student student3 = userRepository.save(createStudent("3"));
+        Course course3 = entityManager.persist(EntityCreatorUtil.createCourse("3", instructor));
+        Lesson lesson3 = lessonRepository.save(EntityCreatorUtil.createLesson("3", course3));
+        Student student3 = userRepository.save(EntityCreatorUtil.createStudent("3"));
         Submission submission3 = submissionRepository.save(
-                Submission.builder()
-                        .grade(new Random().nextDouble(0.0, 100.0))
-                        .lesson(lesson3)
-                        .student(student3)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createSubmission("3", lesson3, student3)
         );
 
         submissionRepository
@@ -407,34 +247,18 @@ public class SubmissionRepositoryTest {
 
     @Test
     public void should_delete_all_submissions() {
-        Course course1 = entityManager.persist(createCourse("1"));
-        Lesson lesson1 = lessonRepository.save(createLesson("1", course1));
-        Student student1 = userRepository.save(createStudent("1"));
+        Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
+        Lesson lesson1 = lessonRepository.save(EntityCreatorUtil.createLesson("1", course1));
+        Student student1 = userRepository.save(EntityCreatorUtil.createStudent("1"));
         Submission submission1 = submissionRepository.save(
-                Submission.builder()
-                        .grade(new Random().nextDouble(0.0, 100.0))
-                        .lesson(lesson1)
-                        .student(student1)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createSubmission("1", lesson1, student1)
         );
 
-        Course course2 = entityManager.persist(createCourse("2"));
-        Lesson lesson2 = lessonRepository.save(createLesson("2", course2));
-        Student student2 = userRepository.save(createStudent("2"));
+        Course course2 = entityManager.persist(EntityCreatorUtil.createCourse("2", instructor));
+        Lesson lesson2 = lessonRepository.save(EntityCreatorUtil.createLesson("2", course2));
+        Student student2 = userRepository.save(EntityCreatorUtil.createStudent("2"));
         Submission submission2 = submissionRepository.save(
-                Submission.builder()
-                        .grade(new Random().nextDouble(0.0, 100.0))
-                        .lesson(lesson1)
-                        .student(student1)
-                        .createdBy("Anonymous")
-                        .createdDate(LocalDateTime.now())
-                        .modifiedBy("Anonymous")
-                        .modifiedDate(LocalDateTime.now())
-                        .build()
+                EntityCreatorUtil.createSubmission("2", lesson2, student2)
         );
 
         submissionRepository.deleteAll();

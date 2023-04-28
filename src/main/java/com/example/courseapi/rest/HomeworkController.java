@@ -1,23 +1,28 @@
 package com.example.courseapi.rest;
 
 import com.example.courseapi.config.EntityHeaderCreator;
-import com.example.courseapi.controller.util.ResponseUtil;
+import com.example.courseapi.config.args.generic.Filters;
+import com.example.courseapi.util.ResponseUtil;
 import com.example.courseapi.domain.Student;
 import com.example.courseapi.dto.HomeworkDTO;
+import com.example.courseapi.exception.IllegalRoleAccessException;
 import com.example.courseapi.exception.SystemException;
 import com.example.courseapi.exception.code.ErrorCode;
-import com.example.courseapi.security.annotation.CurrentUser;
 import com.example.courseapi.service.HomeworkService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -62,11 +67,16 @@ public class HomeworkController {
      *
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
-    @PostMapping("/{lessonId}/homeworks")
+    @PreAuthorize("hasRole('STUDENT')")
+    @PostMapping("/lesson/{lessonId}/homework")
     public ResponseEntity<HomeworkDTO> uploadHomeworkForLesson(
-            @PathVariable Long lessonId, @RequestParam("file") final MultipartFile file, @CurrentUser Student student
+            @PathVariable Long lessonId,
+            @RequestParam("file") final MultipartFile file,
+            @AuthenticationPrincipal Student student
     ) throws URISyntaxException {
-
+        if (Objects.isNull(student)) {
+            throw new IllegalRoleAccessException();
+        }
         HomeworkDTO result = homeworkService.uploadHomeworkForLesson(lessonId, file, student.getId());
         return ResponseEntity.created(new URI("/api/homeworks/" + result.getId()))
                 .headers(entityHeaderCreator.createEntityCreationAlert(ENTITY_NAME, result.getId().toString()))
@@ -98,8 +108,8 @@ public class HomeworkController {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of homeworks in body.
      */
     @GetMapping("/homeworks")
-    public List<HomeworkDTO> getAllHomeworks() {
-        return homeworkService.findAll();
+    public Page<HomeworkDTO> getAllHomeworks(Filters filters, Pageable pageable) {
+        return homeworkService.findAll(filters, pageable);
     }
 
     /**

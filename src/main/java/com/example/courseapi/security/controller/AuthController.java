@@ -7,13 +7,11 @@ import com.example.courseapi.security.dto.SignUpRequestDTO;
 import com.example.courseapi.security.service.AuthenticationService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 @SecurityRequirements
 @RestController
@@ -24,18 +22,21 @@ public class AuthController {
     private final AuthenticationService authenticationService;
 
     @PostMapping("/signup")
-    public ResponseEntity<JWTTokenDTO> register(@RequestBody SignUpRequestDTO signUpRequestDTO) {
-        return ResponseEntity.ok(authenticationService.register(signUpRequestDTO));
+    public ResponseEntity<Void> register(@Valid @RequestBody SignUpRequestDTO signUpRequestDTO) {
+        log.info("POST request to register user with email : {}", signUpRequestDTO.getEmail());
+        authenticationService.register(signUpRequestDTO);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/login")
-    public ResponseEntity<JWTTokenDTO> login(@RequestBody LoginRequestDTO loginRequestDTO) {
-        log.info("POST request to login user with username : {}", loginRequestDTO.getEmail());
-        return ResponseEntity.ok(authenticationService.authenticate(loginRequestDTO));
+    public ResponseEntity<JWTTokenDTO> login(@Valid @RequestBody LoginRequestDTO loginRequestDTO, HttpServletRequest request) {
+        log.info("POST request to login user with email : {}", loginRequestDTO.getEmail());
+        return ResponseEntity.ok(authenticationService.login(loginRequestDTO, request));
     }
 
-    @GetMapping("/refresh")
-    public ResponseEntity<JWTTokenDTO> refreshToken(@RequestBody JWTRefreshDTO jwtRefreshDTO, HttpServletRequest request) {
+    @PostMapping("/refresh-token")
+    public ResponseEntity<JWTTokenDTO> refreshAccessToken(@Valid @RequestBody JWTRefreshDTO jwtRefreshDTO, HttpServletRequest request) {
+        log.info("POST request to login refresh access token");
         return ResponseEntity.ok(authenticationService.refresh(jwtRefreshDTO, request));
     }
 

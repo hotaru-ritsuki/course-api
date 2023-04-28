@@ -1,12 +1,15 @@
 package com.example.courseapi.rest;
 
 import com.example.courseapi.config.EntityHeaderCreator;
-import com.example.courseapi.controller.util.ResponseUtil;
+import com.example.courseapi.config.args.generic.Filters;
+import com.example.courseapi.util.ResponseUtil;
 import com.example.courseapi.dto.CourseFeedbackDTO;
 import com.example.courseapi.exception.SystemException;
 import com.example.courseapi.exception.code.ErrorCode;
 import com.example.courseapi.service.CourseFeedbackService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -74,8 +76,8 @@ public class CourseFeedbackController {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of courseFeedbacks in body.
      */
     @GetMapping("/course-feedbacks")
-    public List<CourseFeedbackDTO> getAllCourseFeedbacks() {
-        return courseFeedbackService.findAll();
+    public Page<CourseFeedbackDTO> getAllCourseFeedbacks(Filters filters, Pageable pageable) {
+        return courseFeedbackService.findAll(filters, pageable);
     }
 
     /**
