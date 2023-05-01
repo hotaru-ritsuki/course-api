@@ -37,10 +37,10 @@ public class Lesson extends BaseEntity {
     private String description;
 
     @ManyToOne
-    @JoinColumn(name = "course_id", nullable = false)
+    @JoinColumn(name = "course_id")
     private Course course;
 
     @Builder.Default
-    @OneToMany(mappedBy = "lesson")
+    @OneToMany(mappedBy = "lesson", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Set<Submission> submissions = new HashSet<>();
 }

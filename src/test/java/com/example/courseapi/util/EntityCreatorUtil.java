@@ -19,6 +19,22 @@ public final class EntityCreatorUtil {
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity
      */
+    public static Admin predefinedAdmin() {
+        return Admin.builder()
+                .firstName("Admin")
+                .lastName("Phantom")
+                .email("admin.phantom@courses.com")
+                .password("$2a$12$icb9BIES3BgjXkHv1V2acu4YPcYJGNUVwjg2gZtyuSDVO4bQ/Flte")
+                .role(Roles.ADMIN)
+                .build();
+    }
+
+    /**
+     * Create a User entity for the test.
+     * <p>
+     * This is a static method, as tests for other entities might also need it,
+     * if they test an entity which requires the current entity
+     */
     public static User createUser(String uuid) {
         return User.builder()
                 .firstName("FirstName#" + uuid)
@@ -92,15 +108,16 @@ public final class EntityCreatorUtil {
      * if they test an entity which requires the current entity
      */
     public static Lesson createLesson(String uuid, Course course) {
-        return Lesson.builder()
+        Lesson lesson = Lesson.builder()
                 .title("Title#" + uuid)
                 .description("Description#" + uuid)
-                .course(course)
                 .createdBy("Anonymous")
                 .createdDate(LocalDateTime.now())
                 .modifiedBy("Anonymous")
                 .modifiedDate(LocalDateTime.now())
                 .build();
+        course.addLesson(lesson);
+        return lesson;
     }
 
     /**

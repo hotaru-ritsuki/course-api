@@ -1,23 +1,21 @@
 package com.example.courseapi.rest;
 
-import com.example.courseapi.config.MockMvcBuilder;
+import com.example.courseapi.config.MockMvcBuilderTestConfiguration;
 import com.example.courseapi.config.annotation.CustomMockAdmin;
 import com.example.courseapi.config.annotation.CustomMockInstructor;
 import com.example.courseapi.config.annotation.CustomMockStudent;
 import com.example.courseapi.config.annotation.DefaultTestConfiguration;
 import com.example.courseapi.domain.*;
 import com.example.courseapi.domain.enums.Roles;
-import com.example.courseapi.dto.RoleDTO;
-import com.example.courseapi.dto.UserRequestDTO;
-import com.example.courseapi.dto.UserResponseDTO;
+import com.example.courseapi.dto.request.RoleRequestDTO;
+import com.example.courseapi.dto.request.UserRequestDTO;
+import com.example.courseapi.dto.response.UserResponseDTO;
 import com.example.courseapi.repository.UserRepository;
 import com.example.courseapi.service.mapper.UserMapper;
-import com.example.courseapi.service.mapper.UserRequestMapper;
 import com.example.courseapi.util.EntityCreatorUtil;
 import com.example.courseapi.util.TestUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.validation.Valid;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
@@ -26,17 +24,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Optional;
 
@@ -55,7 +46,7 @@ class UserControllerTest {
     private EntityManager entityManager;
 
     @Autowired
-    private MockMvcBuilder mockMvcBuilder;
+    private MockMvcBuilderTestConfiguration mockMvcBuilderTestConfiguration;
 
     @Autowired
     private UserController userController;
@@ -64,7 +55,7 @@ class UserControllerTest {
     private UserRepository userRepository;
 
     @Autowired
-    private UserRequestMapper userRequestMapper;
+    private UserMapper userMapper;
 
     private MockMvc restUserMockMvc;
 
@@ -78,7 +69,7 @@ class UserControllerTest {
     @BeforeEach
     public void setup() {
         this.closable = MockitoAnnotations.openMocks(this);
-        this.restUserMockMvc = mockMvcBuilder.forControllers(userController);
+        this.restUserMockMvc = mockMvcBuilderTestConfiguration.forControllers(userController);
     }
 
     @Test
@@ -88,7 +79,7 @@ class UserControllerTest {
         long databaseSizeBeforeCreate = userRepository.count();
 
         // Create user
-        UserRequestDTO userDTO = userRequestMapper.toDto(EntityCreatorUtil.createUser(""));
+        UserRequestDTO userDTO = userMapper.toRequestDto(EntityCreatorUtil.createUser(""));
 
         restUserMockMvc.perform(post("/api/v1/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -110,15 +101,6 @@ class UserControllerTest {
         assertThat(testUser.getPassword()).isNotNull();
     }
 
-//    @PreAuthorize("hasRole('ADMIN')")
-//    @PostMapping("/users/{userId}/role")
-//    public ResponseEntity<UserResponseDTO> assignRoleForUser(@PathVariable Long userId, @Valid @RequestBody RoleDTO roleDTO)
-//            throws URISyntaxException {
-//        UserResponseDTO result = userService.assingRoleForUser(userId, roleDTO.getRole());
-//        return ResponseEntity.created(new URI("/api/users/" + result.getId()))
-//                .headers(entityHeaderCreator.createEntityCreationAlert(ENTITY_NAME, result.getId().toString()))
-//                .body(result);
-//    }
     @Test
     @Transactional
     @CustomMockAdmin
@@ -127,12 +109,12 @@ class UserControllerTest {
         User savedUser = EntityCreatorUtil.createUser("");
         savedUser = userRepository.saveAndFlush(savedUser);
 
-        RoleDTO roleDTO = new RoleDTO(Roles.INSTRUCTOR);
+        RoleRequestDTO roleRequestDTO = new RoleRequestDTO(Roles.INSTRUCTOR);
 
         restUserMockMvc.perform(post("/api/v1/users/" + savedUser.getId() + "/role")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(roleDTO)))
-                .andExpect(status().isCreated());
+                        .content(TestUtil.convertObjectToJsonBytes(roleRequestDTO)))
+                .andExpect(status().isOk());
 
         // Validate new User in the database
         Optional<User> testUserOpt = userRepository.findByEmail(savedUser.getEmail());
@@ -154,12 +136,12 @@ class UserControllerTest {
         User savedUser = EntityCreatorUtil.createUser("");
         savedUser = userRepository.saveAndFlush(savedUser);
 
-        RoleDTO roleDTO = new RoleDTO(Roles.ADMIN);
+        RoleRequestDTO roleRequestDTO = new RoleRequestDTO(Roles.ADMIN);
 
         restUserMockMvc.perform(post("/api/v1/users/" + savedUser.getId() + "/role")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(roleDTO)))
-                .andExpect(status().isCreated());
+                        .content(TestUtil.convertObjectToJsonBytes(roleRequestDTO)))
+                .andExpect(status().isOk());
 
         // Validate new User in the database
         Optional<User> testUserOpt = userRepository.findByEmail(savedUser.getEmail());
@@ -180,7 +162,7 @@ class UserControllerTest {
         long databaseSizeBeforeCreate = userRepository.count();
 
         // Create the User with an existing ID
-        UserRequestDTO userDTO = userRequestMapper.toDto(EntityCreatorUtil.createUser(""));
+        UserRequestDTO userDTO = userMapper.toRequestDto(EntityCreatorUtil.createUser(""));
         userDTO.setId(1L);
 
         // An entity with an existing ID cannot be created, so this API call must fail
@@ -205,7 +187,7 @@ class UserControllerTest {
         user.setFirstName(null);
 
         // Create the User, which fails.
-        UserRequestDTO userDTO = userRequestMapper.toDto(user);
+        UserRequestDTO userDTO = userMapper.toRequestDto(user);
 
         restUserMockMvc.perform(post("/api/v1/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -228,7 +210,7 @@ class UserControllerTest {
         user.setFirstName(RandomStringUtils.randomAlphabetic(1));
 
         // Create the User, which fails.
-        UserRequestDTO userDTO = userRequestMapper.toDto(user);
+        UserRequestDTO userDTO = userMapper.toRequestDto(user);
 
         restUserMockMvc.perform(post("/api/v1/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -242,7 +224,7 @@ class UserControllerTest {
         user.setFirstName(RandomStringUtils.randomAlphabetic(2));
 
         // Create the User, which fails.
-        userDTO = userRequestMapper.toDto(user);
+        userDTO = userMapper.toRequestDto(user);
 
         restUserMockMvc.perform(post("/api/v1/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -257,7 +239,7 @@ class UserControllerTest {
         user.setFirstName(RandomStringUtils.randomAlphabetic(50));
 
         // Create the User, which fails.
-        userDTO = userRequestMapper.toDto(user);
+        userDTO = userMapper.toRequestDto(user);
 
         restUserMockMvc.perform(post("/api/v1/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -318,7 +300,7 @@ class UserControllerTest {
         updatedUser
                 .setLastName(UPDATED_LASTNAME);
 
-        UserRequestDTO userDTO = userRequestMapper.toDto(updatedUser);
+        UserRequestDTO userDTO = userMapper.toRequestDto(updatedUser);
 
         restUserMockMvc.perform(put("/api/v1/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -343,7 +325,7 @@ class UserControllerTest {
         long databaseSizeBeforeUpdate = userRepository.count();
 
         // Create the User
-        UserRequestDTO userDTO = userRequestMapper.toDto(EntityCreatorUtil.createUser(""));
+        UserRequestDTO userDTO = userMapper.toRequestDto(EntityCreatorUtil.createUser(""));
 
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restUserMockMvc.perform(put("/api/v1/users")
@@ -352,8 +334,8 @@ class UserControllerTest {
                 .andExpect(status().isBadRequest());
 
         // Validate the User in the database
-        List<User> userList = userRepository.findAll();
-        assertThat(userList).hasSize((int)databaseSizeBeforeUpdate);
+        long databaseSizeAfterUpdate = userRepository.count();
+        assertThat(databaseSizeAfterUpdate).isEqualTo(databaseSizeBeforeUpdate);
     }
 
     @Test
@@ -363,7 +345,7 @@ class UserControllerTest {
         // Initialize the database
         User user = userRepository.saveAndFlush(EntityCreatorUtil.createUser(""));
 
-        int databaseSizeBeforeDelete = userRepository.findAll().size();
+        long databaseSizeBeforeDelete = userRepository.count();
 
         // Delete the user
         restUserMockMvc.perform(delete("/api/v1/users/{id}", user.getId())
@@ -371,8 +353,9 @@ class UserControllerTest {
                 .andExpect(status().isNoContent());
 
         // Validate the database is empty
-        List<User> userList = userRepository.findAll();
-        assertThat(userList).hasSize(databaseSizeBeforeDelete - 1);
+        long databaseSizeAfterDelete = userRepository.count();
+
+        assertThat(databaseSizeAfterDelete).isEqualTo(databaseSizeBeforeDelete - 1);
     }
 
     @Test

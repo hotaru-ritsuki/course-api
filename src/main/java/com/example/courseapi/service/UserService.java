@@ -3,12 +3,10 @@ package com.example.courseapi.service;
 import com.example.courseapi.config.args.generic.Filters;
 import com.example.courseapi.domain.User;
 import com.example.courseapi.domain.enums.Roles;
-import com.example.courseapi.dto.UserRequestDTO;
-import com.example.courseapi.dto.UserResponseDTO;
+import com.example.courseapi.dto.response.UserResponseDTO;
+import com.example.courseapi.dto.request.UserRequestDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
-import java.util.List;
 
 /**
  * Service Interface for managing {@link User} entity.

@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.experimental.SuperBuilder;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.util.HashSet;
@@ -39,22 +40,51 @@ public class Course extends BaseEntity {
     @Column(name = "description")
     private String description;
 
+    @NotNull
+    @Builder.Default
+    @Column(name = "available")
+    private Boolean available = false;
+
     @Size(min = 1)
     @Builder.Default
-    @ManyToMany(mappedBy = "instructorCourses")
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            schema = "course_management",
+            name = "courses_instructors",
+            joinColumns = @JoinColumn(name = "course_id"),
+            inverseJoinColumns = @JoinColumn(name = "instructor_id"))
     private Set<Instructor> instructors = new HashSet<>();
 
     @Builder.Default
-    @ManyToMany(mappedBy = "studentCourses", cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            schema = "course_management",
+            name = "courses_students",
+            joinColumns = @JoinColumn(name = "course_id"),
+            inverseJoinColumns = @JoinColumn(name = "student_id"))
     private Set<Student> students = new HashSet<>();
 
     @Builder.Default
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     private Set<Lesson> lessons = new HashSet<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "course")
     private Set<CourseFeedback> courseFeedbacks = new HashSet<>();
+
+    @PrePersist
+    @PreUpdate
+    private void validateCourse() {
+        this.available = CollectionUtils.sizeIsEmpty(this.instructors)
+                && CollectionUtils.size(this.lessons) >= 5;
+    }
+
+    @PreRemove
+    private void deleteRelations() {
+        for (Instructor instructor : this.instructors) {
+            this.removeInstructor(instructor);
+        }
+    }
 
     public void addLesson(Lesson lesson) {
         this.lessons.add(lesson);

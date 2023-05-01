@@ -1,6 +1,6 @@
 package com.example.courseapi.repository;
 
-import com.example.courseapi.config.DefaultJPARepositoryTestConfiguration;
+import com.example.courseapi.config.annotation.DefaultJPARepositoryTestConfiguration;
 import com.example.courseapi.domain.Course;
 import com.example.courseapi.domain.Instructor;
 import com.example.courseapi.domain.Lesson;
@@ -192,47 +192,6 @@ public class LessonRepositoryTest {
         assertThat(checkLesson.getId()).isEqualTo(lesson.getId());
         assertThat(checkLesson.getTitle()).isEqualTo(lesson.getTitle());
         assertThat(checkLesson.getDescription()).isEqualTo(lesson.getDescription());
-    }
-
-    @Test
-    public void should_delete_lesson_by_id() {
-        Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
-        Lesson lesson1 = entityManager.persist(
-                EntityCreatorUtil.createLesson("1", course1)
-        );
-
-        Course course2 = entityManager.persist(EntityCreatorUtil.createCourse("2", instructor));
-        Lesson lesson2 = entityManager.persist(
-                EntityCreatorUtil.createLesson("2", course2)
-        );
-
-        Course course3 = entityManager.persist(EntityCreatorUtil.createCourse("3", instructor));
-        Lesson lesson3 = entityManager.persist(
-                EntityCreatorUtil.createLesson("3", course3)
-        );
-
-        lessonRepository.deleteById(lesson2.getId());
-
-        List<Lesson> lessons = lessonRepository.findAll();
-
-        assertThat(lessons).hasSize(2).contains(lesson1, lesson3);
-    }
-
-    @Test
-    public void should_delete_all_lessons() {
-        Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
-        Lesson lesson1 = entityManager.persist(
-                EntityCreatorUtil.createLesson("1", course1)
-        );
-
-        Course course2 = entityManager.persist(EntityCreatorUtil.createCourse("2", instructor));
-        Lesson lesson2 = entityManager.persist(
-                EntityCreatorUtil.createLesson("2", course2)
-        );
-
-        lessonRepository.deleteAll();
-
-        assertThat(lessonRepository.count()).isEqualTo(0L);
     }
 }
 

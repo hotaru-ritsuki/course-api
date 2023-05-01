@@ -18,11 +18,23 @@ import java.util.Set;
 public final class Instructor extends User {
 
     @Builder.Default
-    @ManyToMany
-    @JoinTable(
-            schema = "course_management",
-            name = "courses_instructors",
-            joinColumns = @JoinColumn(name = "instructor_id"),
-            inverseJoinColumns = @JoinColumn(name = "course_id"))
+    @ManyToMany(mappedBy = "instructors", fetch = FetchType.EAGER)
     private Set<Course> instructorCourses = new HashSet<>();
+
+    @PreRemove
+    private void deleteRelations() {
+        for (Course course : this.instructorCourses) {
+            this.removeInstructorCourse(course);
+        }
+    }
+
+    public void addInstructorCourse(Course course) {
+        this.instructorCourses.add(course);
+        course.getInstructors().add(this);
+    }
+
+    public void removeInstructorCourse(Course course) {
+        this.instructorCourses.remove(course);
+        course.getInstructors().remove(this);
+    }
 }

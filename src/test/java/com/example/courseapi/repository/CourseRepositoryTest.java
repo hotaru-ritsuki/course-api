@@ -1,7 +1,7 @@
 package com.example.courseapi.repository;
 
 
-import com.example.courseapi.config.DefaultJPARepositoryTestConfiguration;
+import com.example.courseapi.config.annotation.DefaultJPARepositoryTestConfiguration;
 import com.example.courseapi.domain.Course;
 import com.example.courseapi.domain.Instructor;
 import com.example.courseapi.util.EntityCreatorUtil;

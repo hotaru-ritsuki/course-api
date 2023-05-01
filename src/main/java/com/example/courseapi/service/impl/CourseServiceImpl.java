@@ -1,29 +1,35 @@
 package com.example.courseapi.service.impl;
 
+import com.example.courseapi.config.args.generic.FilterImpl;
 import com.example.courseapi.config.args.generic.Filters;
+import com.example.courseapi.config.args.generic.SpecificationComparison;
 import com.example.courseapi.config.args.specs.SpecificationBuilder;
 import com.example.courseapi.domain.*;
 import com.example.courseapi.domain.enums.CourseStatus;
 import com.example.courseapi.domain.enums.Roles;
-import com.example.courseapi.dto.CourseDTO;
-import com.example.courseapi.dto.CourseGradeDTO;
-import com.example.courseapi.dto.CourseStatusDTO;
+import com.example.courseapi.dto.*;
+import com.example.courseapi.dto.request.CourseRequestDTO;
+import com.example.courseapi.dto.request.LessonRequestDTO;
+import com.example.courseapi.dto.request.LessonsUpdateDTO;
+import com.example.courseapi.dto.response.CourseResponseDTO;
+import com.example.courseapi.dto.response.CourseStatusResponseDTO;
+import com.example.courseapi.dto.response.LessonResponseDTO;
 import com.example.courseapi.exception.*;
-import com.example.courseapi.repository.CourseRepository;
-import com.example.courseapi.repository.InstructorRepository;
-import com.example.courseapi.repository.StudentRepository;
-import com.example.courseapi.repository.UserRepository;
+import com.example.courseapi.exception.code.ErrorCode;
+import com.example.courseapi.repository.*;
 import com.example.courseapi.service.CourseService;
 import com.example.courseapi.service.SubmissionService;
 import com.example.courseapi.service.mapper.CourseMapper;
-import com.example.courseapi.service.mapper.CourseStatusMapper;
+import com.example.courseapi.service.mapper.LessonMapper;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 
@@ -34,53 +40,67 @@ public class CourseServiceImpl implements CourseService {
     private final StudentRepository studentRepository;
     private final InstructorRepository instructorRepository;
     private final UserRepository userRepository;
+    private final LessonRepository lessonRepository;
     private final CourseMapper courseMapper;
-    private final CourseStatusMapper courseStatusMapper;
+    private final LessonMapper lessonMapper;
     private final SubmissionService submissionService;
 
-    public Optional<CourseDTO> findById(Long id) {
-        return courseRepository.findById(id).map(courseMapper::toDto);
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<CourseResponseDTO> findById(Long id) {
+        return courseRepository.findById(id).map(courseMapper::toResponseDto);
     }
 
     @Override
-    public CourseDTO save(CourseDTO courseDTO) {
-        Course course = courseMapper.toEntity(courseDTO);
-        course = courseRepository.save(course);
-
-        return courseMapper.toDto(course);
+    @Transactional
+    public CourseResponseDTO save(CourseRequestDTO courseDTO) {
+        validateCourseInstructors(courseDTO);
+        Course course = courseRepository.save(courseMapper.fromRequestDto(courseDTO));
+        return courseMapper.toResponseDto(course);
     }
 
     @Override
-    public Page<CourseDTO> findAll(Filters filters, Pageable pageable) {
+    @Transactional(readOnly = true)
+    public Page<CourseResponseDTO> findAll(Filters filters, Pageable pageable, User user) {
+        if (user instanceof Student) {
+            filters.include(new FilterImpl("available", SpecificationComparison.EQUALS, true));
+        }
         return courseRepository.findAll(new SpecificationBuilder<Course>(filters).build(), pageable)
-                .map(courseMapper::toDto);
+                .map(courseMapper::toResponseDto);
     }
 
     @Override
-    public List<CourseDTO> findByStudentId(Long studentId) {
-        return courseMapper.toDto(courseRepository.findByStudentsId(studentId));
+    @Transactional(readOnly = true)
+    public List<CourseResponseDTO> findByStudentId(Long studentId) {
+        return courseMapper.toResponseDto(courseRepository.findByStudentsId(studentId));
     }
 
     @Override
+    @Transactional
     public void delete(Long courseId) {
-        courseRepository.deleteById(courseId);
+        Course course = courseRepository.findById(courseId).orElseThrow(() ->
+                new SystemException("Course with id: " + courseId + " not found.", ErrorCode.NOT_FOUND));
+        courseRepository.delete(course);
     }
 
     @Override
+    @Transactional
     public void subscribeStudentToCourse(Long courseId, Long studentId) {
-        Course targetCourse = courseRepository.findById(courseId)
-                .orElseThrow(CourseNotFoundException::new);
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(StudentNotFoundException::new);
+        Course targetCourse = courseRepository.findById(courseId).orElseThrow(() ->
+                new SystemException("Course with id: " + courseId + "not found", ErrorCode.BAD_REQUEST));
+        Student student = studentRepository.findById(studentId).orElseThrow(() ->
+                new SystemException("Student with id: " + studentId + "not found", ErrorCode.BAD_REQUEST));
 
         Set<Course> studentCourses = student.getStudentCourses();
 
         if (studentCourses.contains(targetCourse)) {
-            throw new StudentAlreadySubscribedToCourse();
+            throw new SystemException("Student already subscribed to the course with id: " + courseId,
+                    ErrorCode.BAD_REQUEST);
         }
 
         if (studentCourses.size() > 5) {
-            throw new CourseLimitExceededException();
+            throw new SystemException("Course limit for student " + student.getEmail() + " exceeded.",
+                    ErrorCode.BAD_REQUEST);
         }
 
         targetCourse.addStudent(student);
@@ -88,15 +108,18 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    public CourseStatusDTO getCourseStatus(Long courseId, Long studentId) {
+    @Transactional(readOnly = true)
+    public CourseStatusResponseDTO getCourseStatus(Long courseId, Long studentId) {
         if (!isStudentSubscribedToCourse(courseId, studentId)) {
-            throw new StudentNotSubscribedToCourse();
+            throw new SystemException("Student with id: " + studentId +
+                    " is not subscribed to course with id: " + courseId, ErrorCode.BAD_REQUEST);
         }
 
         Course course = courseRepository.findById(courseId)
-                .orElseThrow(CourseNotFoundException::new);
+                .orElseThrow(() -> new SystemException("Course with id: " + courseId + "not found",
+                        ErrorCode.BAD_REQUEST));
         CourseGradeDTO courseGradeDTO = calculateCourseStatus(studentId, course);
-        return courseStatusMapper.toDto(course, studentId, courseGradeDTO);
+        return courseMapper.toResponseStatusDto(course, studentId, courseGradeDTO);
     }
 
     @Override
@@ -133,47 +156,100 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public boolean isStudentSubscribedToCourse(Long courseId, Long studentId) {
         return courseRepository.existsByIdAndStudentsId(courseId, studentId);
     }
 
     @Override
-    public Set<? extends CourseDTO> getMyCourses(Long userId) {
-        User currentUser = userRepository.findById(userId)
-                .orElseThrow(UserNotFoundException::new);
+    @Transactional(readOnly = true)
+    public Set<? extends CourseResponseDTO> getMyCourses(Long userId) {
+        User currentUser = userRepository.findById(userId).orElseThrow(() ->
+                new SystemException("User with id: " + userId + " not found.", ErrorCode.BAD_REQUEST));
         if (currentUser.getRole().equals(Roles.STUDENT) && currentUser instanceof Student currentStudent) {
             return currentStudent.getStudentCourses().stream()
-                            .map(course -> {
-                                CourseGradeDTO courseGradeDTO = calculateCourseStatus(currentStudent.getId(), course);
-                                return courseStatusMapper.toDto(course, currentStudent.getId(), courseGradeDTO);
-                            })
+                    .map(course -> {
+                        CourseGradeDTO courseGradeDTO = calculateCourseStatus(currentStudent.getId(), course);
+                        return courseMapper.toResponseStatusDto(course, currentStudent.getId(), courseGradeDTO);
+                    })
                     .collect(Collectors.toSet());
         } else if (currentUser.getRole().equals(Roles.INSTRUCTOR) && currentUser instanceof Instructor currentInstructor) {
-            return courseMapper.toDto(currentInstructor.getInstructorCourses());
+            return courseMapper.toResponseDto(currentInstructor.getInstructorCourses());
         } else {
-            throw new IllegalRoleAccessException();
+            throw new SystemException("Illegal role access", ErrorCode.FORBIDDEN);
         }
     }
 
     @Override
-    public void addInstructorToCourse(Long courseId, Long instructorId) {
+    @Transactional
+    public CourseResponseDTO addInstructorToCourse(Long courseId, Long instructorId) {
         Course course = courseRepository.findById(courseId)
-                .orElseThrow(CourseNotFoundException::new);
+                .orElseThrow(() -> new SystemException("Course with id: " + courseId + "not found",
+                        ErrorCode.BAD_REQUEST));
         Instructor instructor = instructorRepository.findById(instructorId)
-                .orElseThrow(InstructorNotFoundException::new);
+                .orElseThrow(() -> new SystemException("Instructor with id: " + instructorId + "not found",
+                        ErrorCode.BAD_REQUEST));
         course.addInstructor(instructor);
         course = courseRepository.save(course);
-        courseMapper.toDto(course);
+        return courseMapper.toResponseDto(course);
     }
 
     @Override
-    public void deleteInstructorForCourse(Long courseId, Long instructorId) {
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(CourseNotFoundException::new);
+    @Transactional
+    public CourseResponseDTO deleteInstructorForCourse(Long courseId, Long instructorId) {
+        Course course = courseRepository.findById(courseId).orElseThrow(() ->
+                new SystemException("Course with id: " + courseId + "not found", ErrorCode.BAD_REQUEST));
         Instructor instructor = instructorRepository.findById(instructorId)
-                .orElseThrow(InstructorNotFoundException::new);
+                .orElseThrow(() -> new SystemException("Instructor with id: " + instructorId + "not found",
+                        ErrorCode.BAD_REQUEST));
         course.removeInstructor(instructor);
         course = courseRepository.save(course);
-        courseMapper.toDto(course);
+        return courseMapper.toResponseDto(course);
+    }
+
+    @Override
+    @Transactional
+    public CourseResponseDTO updateCourseLessons(Long courseId, LessonsUpdateDTO lessonsDTO) {
+        Course course = courseRepository.findById(courseId).orElseThrow(() -> new SystemException("Course with id: " + courseId + "not found",
+                ErrorCode.BAD_REQUEST));
+
+        course.getLessons().clear();
+        // Update the lessons in the Course entity
+        for (LessonRequestDTO lessonRequestDTO : lessonsDTO.getLessons()) {
+            if (lessonRequestDTO.getId() == null) {
+                // This is a new lesson, so add it to the set of lessons
+                lessonRequestDTO.setCourseId(course.getId());
+                Lesson savedLesson = lessonRepository.save(lessonMapper.fromRequestDto(lessonRequestDTO));
+                course.addLesson(savedLesson);
+            } else {
+                // This is an existing lesson, so update its properties
+                Lesson existingLesson = lessonRepository.findById(lessonRequestDTO.getId()).orElseThrow(() ->
+                        new SystemException("Lesson with id: " + lessonRequestDTO.getId() + " not found.", ErrorCode.BAD_REQUEST));
+                if (!existingLesson.getCourse().getId().equals(courseId) && existingLesson.getCourse().getLessons().size() <=5) {
+                    throw new SystemException("Attempt to reassign lesson to another course will break course with id: " + existingLesson.getCourse().getId(),
+                            ErrorCode.BAD_REQUEST);
+                }
+                existingLesson.setTitle(lessonRequestDTO.getTitle());
+                existingLesson.setDescription(lessonRequestDTO.getDescription());
+                lessonRepository.save(existingLesson);
+                course.addLesson(existingLesson);
+            }
+        }
+
+
+        // Save the updated Course entity
+        return courseMapper.toResponseDto(courseRepository.save(course));
+    }
+
+    private void validateCourseInstructors(CourseRequestDTO courseDTO) {
+        if (Objects.nonNull(courseDTO.getInstructorIds())) {
+            List<Long> missingInstructors = courseDTO.getInstructorIds().stream()
+                    .filter(Predicate.not(instructorRepository::existsById))
+                    .toList();
+            if (CollectionUtils.isNotEmpty(missingInstructors)) {
+                throw new SystemException("Instructors with id(s): " + missingInstructors.toString() + " not found",
+                        ErrorCode.BAD_REQUEST);
+            }
+        }
     }
 }

@@ -2,10 +2,12 @@ package com.example.courseapi.rest;
 
 import com.example.courseapi.config.EntityHeaderCreator;
 import com.example.courseapi.config.args.generic.Filters;
+import com.example.courseapi.domain.User;
+import com.example.courseapi.dto.request.HomeworkRequestDTO;
+import com.example.courseapi.security.annotation.CurrentUser;
 import com.example.courseapi.util.ResponseUtil;
 import com.example.courseapi.domain.Student;
-import com.example.courseapi.dto.HomeworkDTO;
-import com.example.courseapi.exception.IllegalRoleAccessException;
+import com.example.courseapi.dto.response.HomeworkResponseDTO;
 import com.example.courseapi.exception.SystemException;
 import com.example.courseapi.exception.code.ErrorCode;
 import com.example.courseapi.service.HomeworkService;
@@ -15,14 +17,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -30,32 +31,13 @@ import java.util.Optional;
  */
 @RestController
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 @RequestMapping(value = "/api/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 public class HomeworkController {
     private static final String ENTITY_NAME = "Homework";
 
     private final HomeworkService homeworkService;
     private final EntityHeaderCreator entityHeaderCreator;
-
-    /**
-     * {@code POST /homeworks} : Create a new homework.
-     *
-     * @param homeworkDTO the homework to create.
-     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new homeworkDTO,
-     * or with status {@code 400 (Bad Request)} if the homework has already an ID.
-     *
-     * @throws URISyntaxException if the Location URI syntax is incorrect.
-     */
-    @PostMapping("/homeworks")
-    public ResponseEntity<HomeworkDTO> createHomework(@Valid @RequestBody HomeworkDTO homeworkDTO) throws URISyntaxException {
-        if (homeworkDTO.getId() != null) {
-            throw new SystemException("A new homework cannot already have an ID", ErrorCode.BAD_REQUEST);
-        }
-        HomeworkDTO result = homeworkService.save(homeworkDTO);
-        return ResponseEntity.created(new URI("/api/homeworks/" + result.getId()))
-                .headers(entityHeaderCreator.createEntityCreationAlert(ENTITY_NAME, result.getId().toString()))
-                .body(result);
-    }
 
     /**
      * {@code POST /homeworks} : Create a new homework.
@@ -69,15 +51,12 @@ public class HomeworkController {
      */
     @PreAuthorize("hasRole('STUDENT')")
     @PostMapping("/lesson/{lessonId}/homework")
-    public ResponseEntity<HomeworkDTO> uploadHomeworkForLesson(
+    public ResponseEntity<HomeworkResponseDTO> uploadHomeworkForLesson(
             @PathVariable Long lessonId,
             @RequestParam("file") final MultipartFile file,
-            @AuthenticationPrincipal Student student
+            @CurrentUser Student student
     ) throws URISyntaxException {
-        if (Objects.isNull(student)) {
-            throw new IllegalRoleAccessException();
-        }
-        HomeworkDTO result = homeworkService.uploadHomeworkForLesson(lessonId, file, student.getId());
+        HomeworkResponseDTO result = homeworkService.uploadHomeworkForLesson(lessonId, file, student.getId());
         return ResponseEntity.created(new URI("/api/homeworks/" + result.getId()))
                 .headers(entityHeaderCreator.createEntityCreationAlert(ENTITY_NAME, result.getId().toString()))
                 .body(result);
@@ -86,19 +65,20 @@ public class HomeworkController {
     /**
      * {@code PUT  /homeworks} : Updates an existing homework.
      *
-     * @param homeworkDTO the homeworkDTO to update.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated homeworkDTO,
-     * or with status {@code 400 (Bad Request)} if the homeworkDTO is not valid,
-     * or with status {@code 500 (Internal Server Error)} if the homeworkDTO couldn't be updated.
+     * @param homeworkRequestDTO the homeworkRequestDTO to update.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated homeworkResponseDTO,
+     * or with status {@code 400 (Bad Request)} if the homeworkResponseDTO is not valid,
+     * or with status {@code 500 (Internal Server Error)} if the homeworkResponseDTO couldn't be updated.
      */
+    @PreAuthorize("@accessValidator.homeworkAccess(#homeworkRequestDTO.lessonId, #homeworkRequestDTO.studentId)")
     @PutMapping("/homeworks")
-    public ResponseEntity<HomeworkDTO> updateHomework(@Valid @RequestBody HomeworkDTO homeworkDTO) {
-        if (homeworkDTO.getId() == null) {
+    public ResponseEntity<HomeworkResponseDTO> updateHomework(@Valid @RequestBody HomeworkRequestDTO homeworkRequestDTO) {
+        if (homeworkRequestDTO.getId() == null) {
             throw new SystemException("Invalid id", ErrorCode.BAD_REQUEST);
         }
-        HomeworkDTO result = homeworkService.save(homeworkDTO);
+        HomeworkResponseDTO result = homeworkService.save(homeworkRequestDTO);
         return ResponseEntity.ok()
-                .headers(entityHeaderCreator.createEntityUpdateAlert(ENTITY_NAME, homeworkDTO.getId().toString()))
+                .headers(entityHeaderCreator.createEntityUpdateAlert(ENTITY_NAME, homeworkRequestDTO.getId().toString()))
                 .body(result);
     }
 
@@ -108,8 +88,8 @@ public class HomeworkController {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of homeworks in body.
      */
     @GetMapping("/homeworks")
-    public Page<HomeworkDTO> getAllHomeworks(Filters filters, Pageable pageable) {
-        return homeworkService.findAll(filters, pageable);
+    public Page<HomeworkResponseDTO> getAllHomeworks(Filters filters, Pageable pageable, @CurrentUser User user) {
+        return homeworkService.findAll(filters, pageable, user);
     }
 
     /**
@@ -119,23 +99,25 @@ public class HomeworkController {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the homeworkDTO,
      * or with status {@code 404 (Not Found)}.
      */
+    @PostAuthorize("@accessValidator.homeworkAccess(returnObject.body.lessonId, returnObject.body.studentId)")
     @GetMapping("/homeworks/{id}")
-    public ResponseEntity<HomeworkDTO> getHomework(@PathVariable Long id) {
-        Optional<HomeworkDTO> homeworkDTO = homeworkService.findById(id);
+    public ResponseEntity<HomeworkResponseDTO> getHomework(@PathVariable Long id) {
+        Optional<HomeworkResponseDTO> homeworkDTO = homeworkService.findById(id);
         return ResponseUtil.wrapOrNotFound(homeworkDTO);
     }
 
     /**
      * {@code DELETE  /homeworks/:id} : delete the "id" homework.
      *
-     * @param id the id of the homeworkDTO to delete.
+     * @param homeworkId the id of the homeworkDTO to delete.
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
-    @DeleteMapping("/homeworks/{id}")
-    public ResponseEntity<Void> deleteHomework(@PathVariable Long id) {
-        homeworkService.delete(id);
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/homeworks/{homeworkId}")
+    public ResponseEntity<Void> deleteHomework(@PathVariable Long homeworkId) {
+        homeworkService.delete(homeworkId);
         return ResponseEntity.noContent()
-                .headers(entityHeaderCreator.createEntityDeletionAlert(ENTITY_NAME, id.toString()))
+                .headers(entityHeaderCreator.createEntityDeletionAlert(ENTITY_NAME, homeworkId.toString()))
                 .build();
     }
 }

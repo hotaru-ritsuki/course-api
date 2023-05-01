@@ -1,7 +1,10 @@
 package com.example.courseapi.service.mapper;
 
 import com.example.courseapi.domain.*;
-import com.example.courseapi.dto.CourseDTO;
+import com.example.courseapi.dto.CourseGradeDTO;
+import com.example.courseapi.dto.request.CourseRequestDTO;
+import com.example.courseapi.dto.response.CourseResponseDTO;
+import com.example.courseapi.dto.response.CourseStatusResponseDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
@@ -14,25 +17,51 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Mapper for the entity {@link Course} and its DTO {@link CourseDTO}.
+ * Mapper for the entity {@link Course} and its DTO {@link CourseResponseDTO}.
  */
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = LessonMapper.class)
 @Component
-public interface CourseMapper extends EntityMapper<CourseDTO, Course> {
-
+public interface CourseMapper extends EntityMapper<CourseRequestDTO, CourseResponseDTO, Course> {
     @Mappings(value = {
             @Mapping(source = "instructors", target = "instructorIds", qualifiedByName = "usersToIds"),
             @Mapping(source = "students", target = "studentIds", qualifiedByName = "usersToIds"),
-            @Mapping(source = "lessons", target = "lessonIds", qualifiedByName = "lessonsToIds")
+            @Mapping(source = "lessons", target = "lessons")
     })
-    CourseDTO toDto(Course course);
+    CourseResponseDTO toResponseDto(Course course);
+
+    @Mappings(value = {
+            @Mapping(source = "instructors", target = "instructorIds", qualifiedByName = "usersToIds"),
+            @Mapping(source = "students", target = "studentIds", qualifiedByName = "usersToIds")
+    })
+    CourseRequestDTO toRequestDto(Course course);
 
     @Mappings(value = {
             @Mapping(source = "instructorIds", target = "instructors", qualifiedByName = "idsToInstructors"),
             @Mapping(source = "studentIds", target = "students", qualifiedByName = "idsToStudents"),
-            @Mapping(source = "lessonIds", target = "lessons", qualifiedByName = "idsToLessons")
+            @Mapping(source = "lessons", target = "lessons")
     })
-    Course toEntity(CourseDTO courseDTO);
+    Course fromResponseDto(CourseResponseDTO courseDTO);
+
+    @Mappings(value = {
+            @Mapping(source = "instructorIds", target = "instructors", qualifiedByName = "idsToInstructors"),
+            @Mapping(source = "studentIds", target = "students", qualifiedByName = "idsToStudents")
+    })
+    Course fromRequestDto(CourseRequestDTO courseDTO);
+
+    @Mappings(value = {
+            @Mapping(source = "course.instructors", target = "instructorIds", qualifiedByName = "usersToIds"),
+            @Mapping(source = "course.students", target = "studentIds", qualifiedByName = "usersToIds"),
+            @Mapping(source = "course.lessons", target = "lessons"),
+            @Mapping(source = "courseGradeDTO.courseStatus", target = "courseStatus"),
+            @Mapping(source = "courseGradeDTO.finalGrade", target = "finalGrade")
+    })
+    CourseStatusResponseDTO toResponseStatusDto(Course course, Long studentId, CourseGradeDTO courseGradeDTO);
+
+    @Mappings(value = {
+            @Mapping(source = "instructorIds", target = "instructors", qualifiedByName = "idsToInstructors"),
+            @Mapping(source = "studentIds", target = "students", qualifiedByName = "idsToStudents")
+    })
+    Course fromResponseStatusDto(CourseStatusResponseDTO courseStatusDTO);
 
     default Course fromId(Long id) {
         if (id == null) {
@@ -51,14 +80,6 @@ public interface CourseMapper extends EntityMapper<CourseDTO, Course> {
         return users.stream().map(User::getId).collect(Collectors.toSet());
     }
 
-    @Named("lessonsToIds")
-    static Set<Long> lessonsToIds(Set<Lesson> users) {
-        if (Objects.isNull(users)) {
-            return Collections.emptySet();
-        }
-        return users.stream().map(Lesson::getId).collect(Collectors.toSet());
-    }
-
     @Named("idsToStudents")
     static Set<Student> idsToStudents(Set<Long> usersIds) {
         if (Objects.isNull(usersIds)) {
@@ -72,13 +93,5 @@ public interface CourseMapper extends EntityMapper<CourseDTO, Course> {
             return Collections.emptySet();
         }
         return usersIds.stream().map(id -> Instructor.builder().id(id).build()).collect(Collectors.toSet());
-    }
-
-    @Named("idsToLessons")
-    static Set<Lesson> idsToLessons(Set<Long> lessonIds) {
-        if (Objects.isNull(lessonIds)) {
-            return Collections.emptySet();
-        }
-        return lessonIds.stream().map(id -> Lesson.builder().id(id).build()).collect(Collectors.toSet());
     }
 }

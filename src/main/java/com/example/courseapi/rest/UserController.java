@@ -3,10 +3,9 @@ package com.example.courseapi.rest;
 import com.example.courseapi.config.EntityHeaderCreator;
 import com.example.courseapi.config.args.generic.Filters;
 import com.example.courseapi.domain.User;
-import com.example.courseapi.dto.CourseDTO;
-import com.example.courseapi.dto.RoleDTO;
-import com.example.courseapi.dto.UserRequestDTO;
-import com.example.courseapi.dto.UserResponseDTO;
+import com.example.courseapi.dto.request.RoleRequestDTO;
+import com.example.courseapi.dto.response.UserResponseDTO;
+import com.example.courseapi.dto.request.UserRequestDTO;
 import com.example.courseapi.exception.SystemException;
 import com.example.courseapi.exception.code.ErrorCode;
 import com.example.courseapi.security.annotation.CurrentUser;
@@ -23,10 +22,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collection;
 
 @RestController
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 @RequestMapping(value = "/api/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 public class UserController {
 
@@ -55,12 +54,9 @@ public class UserController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/users/{userId}/role")
-    public ResponseEntity<UserResponseDTO> assignRoleForUser(@PathVariable Long userId, @Valid @RequestBody RoleDTO roleDTO)
-            throws URISyntaxException {
-        UserResponseDTO result = userService.assingRoleForUser(userId, roleDTO.getRole());
-        return ResponseEntity.created(new URI("/api/users/" + result.getId()))
-                .headers(entityHeaderCreator.createEntityCreationAlert(ENTITY_NAME, result.getId().toString()))
-                .body(result);
+    public ResponseEntity<UserResponseDTO> assignRoleForUser(@PathVariable Long userId, @Valid @RequestBody RoleRequestDTO roleRequestDTO) {
+        UserResponseDTO result = userService.assingRoleForUser(userId, roleRequestDTO.getRole());
+        return ResponseEntity.ok(result);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -81,6 +77,7 @@ public class UserController {
      * @param userId the id of the user to delete.
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/users/{userId}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
         userService.delete(userId);

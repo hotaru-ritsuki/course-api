@@ -2,13 +2,12 @@ package com.example.courseapi.security.service.impl;
 
 import com.example.courseapi.domain.User;
 import com.example.courseapi.domain.enums.Roles;
-import com.example.courseapi.exception.EmailNotFoundException;
-import com.example.courseapi.exception.UserAlreadyExistsException;
+import com.example.courseapi.exception.SystemException;
+import com.example.courseapi.exception.code.ErrorCode;
 import com.example.courseapi.security.dto.JWTRefreshDTO;
 import com.example.courseapi.security.dto.LoginRequestDTO;
 import com.example.courseapi.security.dto.JWTTokenDTO;
 import com.example.courseapi.security.dto.SignUpRequestDTO;
-import com.example.courseapi.exception.UserNotFoundException;
 import com.example.courseapi.repository.UserRepository;
 import com.example.courseapi.security.service.AuthenticationService;
 import com.example.courseapi.security.service.JwtService;
@@ -41,7 +40,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         try {
             // Check if user already exists
             if (userRepository.existsByEmail(signUpRequestDTO.getEmail())) {
-                throw new UserAlreadyExistsException();
+                throw new SystemException("Incorrect credentials. Please check email or password.",
+                        ErrorCode.BAD_REQUEST);
             }
             // Create new user
             User user = User.builder()
@@ -72,7 +72,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             authenticationManager.authenticate(authToken);
 
             // Get authenticated user and generate access and refresh tokens
-            User user = userRepository.findByEmail(loginRequestDTO.getEmail()).orElseThrow(UserNotFoundException::new);
+            User user = userRepository.findByEmail(loginRequestDTO.getEmail()).orElseThrow(() ->
+                    new SystemException("User with email: " + loginRequestDTO.getEmail() + " not found.", ErrorCode.BAD_REQUEST));
             String jwtAccessToken = jwtService.generateJwtToken(user, true);
             String jwtRefreshToken = jwtService.generateJwtToken(user, false);
             log.info("User authentication successful for email {}", loginRequestDTO.getEmail());
@@ -92,13 +93,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         final String refreshToken = jwtRefreshDTO.getRefreshToken();
         final String userEmail = jwtService.extractUsername(refreshToken);
         if (StringUtils.isBlank(userEmail)) {
-            log.error("Failed to refresh JWT token. User email not found in refresh token.");
-            throw new EmailNotFoundException();
+            throw new SystemException("Failed to refresh JWT token. User email not found in refresh token.",
+                    ErrorCode.UNAUTHORIZED);
         }
-        User userDetails = userRepository.findByEmail(userEmail).orElseThrow(() -> {
-            log.error("Failed to refresh JWT token. User not found for email: {}", userEmail);
-            return new UserNotFoundException();
-        });
+        User userDetails = userRepository.findByEmail(userEmail).orElseThrow(() ->
+                new SystemException("Failed to refresh JWT token. User not found for email:" + userEmail, ErrorCode.UNAUTHORIZED));
         if (Objects.isNull(SecurityContextHolder.getContext().getAuthentication())) {
             if (jwtService.isJwtTokenValid(refreshToken, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(

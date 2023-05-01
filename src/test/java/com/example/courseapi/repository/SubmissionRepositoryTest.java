@@ -1,6 +1,6 @@
 package com.example.courseapi.repository;
 
-import com.example.courseapi.config.DefaultJPARepositoryTestConfiguration;
+import com.example.courseapi.config.annotation.DefaultJPARepositoryTestConfiguration;
 import com.example.courseapi.domain.*;
 import com.example.courseapi.util.EntityCreatorUtil;
 import org.junit.jupiter.api.AfterEach;

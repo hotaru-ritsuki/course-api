@@ -1,19 +1,22 @@
 package com.example.courseapi.rest;
 
-import com.example.courseapi.config.MockMvcBuilder;
+import com.example.courseapi.config.MockMvcBuilderTestConfiguration;
 import com.example.courseapi.config.annotation.CustomMockAdmin;
 import com.example.courseapi.config.annotation.CustomMockInstructor;
 import com.example.courseapi.config.annotation.CustomMockStudent;
 import com.example.courseapi.config.annotation.DefaultTestConfiguration;
 import com.example.courseapi.domain.*;
-import com.example.courseapi.dto.CourseDTO;
+import com.example.courseapi.dto.request.CourseRequestDTO;
+import com.example.courseapi.dto.response.CourseResponseDTO;
 import com.example.courseapi.repository.CourseRepository;
 import com.example.courseapi.repository.LessonRepository;
 import com.example.courseapi.repository.StudentRepository;
 import com.example.courseapi.repository.SubmissionRepository;
 import com.example.courseapi.service.mapper.CourseMapper;
 import com.example.courseapi.util.EntityCreatorUtil;
+import com.example.courseapi.util.JacksonUtil;
 import com.example.courseapi.util.TestUtil;
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -24,8 +27,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.context.TestSecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,7 +54,7 @@ class CourseControllerTest {
     private EntityManager entityManager;
 
     @Autowired
-    private MockMvcBuilder mockMvcBuilder;
+    private MockMvcBuilderTestConfiguration mockMvcBuilderTestConfiguration;
 
     @Autowired
     private CourseController courseController;
@@ -79,7 +86,7 @@ class CourseControllerTest {
     @BeforeEach
     public void setup() {
         this.closable = MockitoAnnotations.openMocks(this);
-        this.restCourseMockMvc = mockMvcBuilder.forControllers(courseController);
+        this.restCourseMockMvc = mockMvcBuilderTestConfiguration.forControllers(courseController);
     }
 
     /**
@@ -93,62 +100,104 @@ class CourseControllerTest {
                 .title(DEFAULT_TITLE)
                 .description(DEFAULT_DESCRIPTION)
                 .build();
-        Instructor instructor;
         // Add required entity
-        if (TestUtil.findOne(em, Instructor.class).isEmpty()) {
-            instructor = EntityCreatorUtil.createInstructor();
-            em.persist(instructor);
-            em.flush();
-        } else {
-            instructor = TestUtil.findOne(em, Instructor.class).get(0);
+        Instructor instructor = EntityCreatorUtil.createInstructor();
+        em.persist(instructor);
+        em.flush();
+
+        course.addInstructor(instructor);
+
+        Optional<Object> userOpt = Optional.ofNullable(SecurityContextHolder.getContext())
+                .map(SecurityContext::getAuthentication)
+                .map(Authentication::getPrincipal);
+        if (userOpt.isPresent() && userOpt.get() instanceof Student student) {
+            course.addStudent(student);
         }
-        HashSet<Instructor> instructors = new HashSet<>();
-        instructors.add(instructor);
-        course.setInstructors(instructors);
         return course;
     }
 
     @Test
     @Transactional
+    @CustomMockAdmin
     void createCourse() throws Exception {
         long databaseSizeBeforeCreate = courseRepository.count();
 
         // Create course
-        CourseDTO courseDTO = courseMapper.toDto(createEntity(entityManager));
+        CourseRequestDTO courseDTO = courseMapper.toRequestDto(createEntity(entityManager));
 
-        restCourseMockMvc.perform(post("/api/v1/courses")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtil.convertObjectToJsonBytes(courseDTO)))
-                .andExpect(status().isCreated());
+        MvcResult courseSaveResult = restCourseMockMvc.perform(post("/api/v1/courses")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(TestUtil.convertObjectToJsonBytes(courseDTO)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        CourseResponseDTO courseResponseDTO = JacksonUtil.deserialize(courseSaveResult.getResponse().getContentAsString(),
+                new TypeReference<CourseResponseDTO>() {});
 
         // Validate new Course in the database
-        List<Course> courseList = courseRepository.findAll();
-        assertEquals(courseList.size(), databaseSizeBeforeCreate + 1);
+        long databaseSizeAfterCreate = courseRepository.count();
+        assertThat(databaseSizeBeforeCreate + 1).isEqualTo(databaseSizeAfterCreate);
 
-        Course testCourse = courseList.get(courseList.size() - 1);
-        assertThat(testCourse.getTitle()).isEqualTo(DEFAULT_TITLE);
-        assertThat(testCourse.getDescription()).isEqualTo(DEFAULT_DESCRIPTION);
-
+        Optional<Course> savedCourseOpt = courseRepository.findById(courseResponseDTO.getId());
+        assertThat(savedCourseOpt).isPresent();
+        Course savedCourse = savedCourseOpt.get();
+        assertThat(savedCourse.getTitle()).isEqualTo(DEFAULT_TITLE);
+        assertThat(savedCourse.getDescription()).isEqualTo(DEFAULT_DESCRIPTION);
     }
 
     @Test
     @Transactional
-    public void createCourseWithExistingId() throws Exception {
+    @CustomMockAdmin
+    void createCourseWithLessons() throws Exception {
         long databaseSizeBeforeCreate = courseRepository.count();
 
+        // Create course
+        Course course = createEntity(entityManager);
+        EntityCreatorUtil.createLesson("1", course);
+        EntityCreatorUtil.createLesson("2", course);
+        EntityCreatorUtil.createLesson("3", course);
+        EntityCreatorUtil.createLesson("4", course);
+        EntityCreatorUtil.createLesson("5", course);
+
+        CourseRequestDTO courseDTO = courseMapper.toRequestDto(course);
+
+        MvcResult courseSaveResult = restCourseMockMvc.perform(post("/api/v1/courses")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(TestUtil.convertObjectToJsonBytes(courseDTO)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        // Validate new Course in the database
+        CourseResponseDTO courseResponseDTO = JacksonUtil.deserialize(courseSaveResult.getResponse().getContentAsString(),
+                new TypeReference<CourseResponseDTO>() {});
+
+        // Validate new Course in the database
+        long databaseSizeAfterCreate = courseRepository.count();
+        assertThat(databaseSizeBeforeCreate + 1).isEqualTo(databaseSizeAfterCreate);
+
+        Optional<Course> savedCourseOpt = courseRepository.findById(courseResponseDTO.getId());
+        assertThat(savedCourseOpt).isPresent();
+        Course savedCourse = savedCourseOpt.get();
+        assertThat(savedCourse.getTitle()).isEqualTo(DEFAULT_TITLE);
+        assertThat(savedCourse.getDescription()).isEqualTo(DEFAULT_DESCRIPTION);
+    }
+
+    @Test
+    @Transactional
+    @CustomMockAdmin
+    public void createCourseWithExistingId() throws Exception {
         // Create the Course with an existing ID
-        CourseDTO courseDTO = courseMapper.toDto(createEntity(entityManager));
-        courseDTO.setId(1L);
+        Course course = createEntity(entityManager);
+        entityManager.persist(course);
+        entityManager.flush();
+
+        CourseRequestDTO courseDTO = courseMapper.toRequestDto(course);
 
         // An entity with an existing ID cannot be created, so this API call must fail
         restCourseMockMvc.perform(post("/api/v1/courses")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(TestUtil.convertObjectToJsonBytes(courseDTO)))
                 .andExpect(status().isBadRequest());
-
-        // Validate the Course in the database
-        long databaseSizeAfterCreate = courseRepository.count();
-        assertEquals(databaseSizeAfterCreate, databaseSizeBeforeCreate);
     }
 
     @Test
@@ -161,7 +210,7 @@ class CourseControllerTest {
         course.setTitle(null);
 
         // Create the Course, which fails.
-        CourseDTO courseDTO = courseMapper.toDto(course);
+        CourseRequestDTO courseDTO = courseMapper.toRequestDto(course);
 
         restCourseMockMvc.perform(post("/api/v1/courses")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -175,6 +224,7 @@ class CourseControllerTest {
 
     @Test
     @Transactional
+    @CustomMockAdmin
     public void checkTitle_shouldHaveLengthFrom2To100() throws Exception {
         long databaseSizeBeforeCreate = courseRepository.count();
 
@@ -183,7 +233,7 @@ class CourseControllerTest {
         course.setTitle(RandomStringUtils.randomAlphabetic(1));
 
         // Create the Course, which fails.
-        CourseDTO courseDTO = courseMapper.toDto(course);
+        CourseRequestDTO courseDTO = courseMapper.toRequestDto(course);
 
         restCourseMockMvc.perform(post("/api/v1/courses")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -197,7 +247,7 @@ class CourseControllerTest {
         course.setTitle(RandomStringUtils.randomAlphabetic(2));
 
         // Create the Course, which fails.
-        courseDTO = courseMapper.toDto(course);
+        courseDTO = courseMapper.toRequestDto(course);
 
         restCourseMockMvc.perform(post("/api/v1/courses")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -212,7 +262,7 @@ class CourseControllerTest {
         course.setTitle(RandomStringUtils.randomAlphabetic(100));
 
         // Create the Course, which fails.
-        courseDTO = courseMapper.toDto(course);
+        courseDTO = courseMapper.toRequestDto(course);
 
         restCourseMockMvc.perform(post("/api/v1/courses")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -234,7 +284,7 @@ class CourseControllerTest {
         course.setDescription(null);
 
         // Create the Course, which fails.
-        CourseDTO courseDTO = courseMapper.toDto(course);
+        CourseRequestDTO courseDTO = courseMapper.toRequestDto(course);
 
         restCourseMockMvc.perform(post("/api/v1/courses")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -248,6 +298,7 @@ class CourseControllerTest {
 
     @Test
     @Transactional
+    @CustomMockAdmin
     public void checkDescription_shouldHaveLengthFrom10To255() throws Exception {
         long databaseSizeBeforeCreate = courseRepository.count();
 
@@ -256,7 +307,7 @@ class CourseControllerTest {
         course.setDescription(RandomStringUtils.randomAlphabetic(1));
 
         // Create the Course, which fails.
-        CourseDTO courseDTO = courseMapper.toDto(course);
+        CourseRequestDTO courseDTO = courseMapper.toRequestDto(course);
 
         restCourseMockMvc.perform(post("/api/v1/courses")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -270,7 +321,7 @@ class CourseControllerTest {
         course.setDescription(RandomStringUtils.randomAlphabetic(10));
 
         // Create the Course, which fails.
-        courseDTO = courseMapper.toDto(course);
+        courseDTO = courseMapper.toRequestDto(course);
 
         restCourseMockMvc.perform(post("/api/v1/courses")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -285,7 +336,7 @@ class CourseControllerTest {
         course.setDescription(RandomStringUtils.randomAlphabetic(255));
 
         // Create the Course, which fails.
-        courseDTO = courseMapper.toDto(course);
+        courseDTO = courseMapper.toRequestDto(course);
 
         restCourseMockMvc.perform(post("/api/v1/courses")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -300,6 +351,7 @@ class CourseControllerTest {
 
     @Test
     @Transactional
+    @CustomMockStudent
     public void getCourse() throws Exception {
         // Initialize the database
         Course course = courseRepository.saveAndFlush(createEntity(entityManager));
@@ -316,6 +368,7 @@ class CourseControllerTest {
 
     @Test
     @Transactional
+    @CustomMockAdmin
     public void getAllCourses() throws Exception {
         // Initialize the database
         Course course = courseRepository.saveAndFlush(createEntity(entityManager));
@@ -332,6 +385,7 @@ class CourseControllerTest {
 
     @Test
     @Transactional
+    @CustomMockStudent
     public void getNonExistingCourse() throws Exception {
         // Get the course
         restCourseMockMvc.perform(get("/api/v1/courses/{id}", Long.MAX_VALUE)
@@ -341,6 +395,7 @@ class CourseControllerTest {
 
     @Test
     @Transactional
+    @CustomMockAdmin
     public void updateCourse() throws Exception {
         // Initialize the database
         Course course = courseRepository.saveAndFlush(createEntity(entityManager));
@@ -348,18 +403,18 @@ class CourseControllerTest {
         long databaseSizeBeforeUpdate = courseRepository.count();
 
         // Update the course
-        Optional<Course> updatedCourseOpt = courseRepository.findById(course.getId());
-        assertThat(updatedCourseOpt).isPresent();
-        Course updatedCourse = updatedCourseOpt.get();
+        Optional<Course> persistedCourseOpt = courseRepository.findById(course.getId());
+        assertThat(persistedCourseOpt).isPresent();
+        Course persistedCourse = persistedCourseOpt.get();
         // Disconnect from session so that the updates on updatedCourse are not directly saved in db
-        entityManager.detach(updatedCourse);
+        entityManager.detach(persistedCourse);
         
-        updatedCourse
+        persistedCourse
                 .setTitle(UPDATED_TITLE);
-        updatedCourse
+        persistedCourse
                 .setDescription(UPDATED_DESCRIPTION);
         
-        CourseDTO courseDTO = courseMapper.toDto(updatedCourse);
+        CourseRequestDTO courseDTO = courseMapper.toRequestDto(persistedCourse);
 
         restCourseMockMvc.perform(put("/api/v1/courses")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -367,11 +422,13 @@ class CourseControllerTest {
                 .andExpect(status().isOk());
 
         // Validate the Course in the database
-        List<Course> courseList = courseRepository.findAll();
-        assertThat(courseList).hasSize((int) databaseSizeBeforeUpdate);
-        Course testCourse = courseList.get(courseList.size() - 1);
-        assertThat(testCourse.getTitle()).isEqualTo(UPDATED_TITLE);
-        assertThat(testCourse.getDescription()).isEqualTo(UPDATED_DESCRIPTION);
+        Long databaseSizeAfterUpdate = courseRepository.count();
+        assertThat(databaseSizeAfterUpdate).isEqualTo(databaseSizeBeforeUpdate);
+        Optional<Course> updatedCourseOpt = courseRepository.findById(course.getId());
+        assertThat(updatedCourseOpt).isPresent();
+        Course updatedCourse = persistedCourseOpt.get();
+        assertThat(updatedCourse.getTitle()).isEqualTo(UPDATED_TITLE);
+        assertThat(updatedCourse.getDescription()).isEqualTo(UPDATED_DESCRIPTION);
     }
 
     @Test
@@ -1012,11 +1069,12 @@ class CourseControllerTest {
 
     @Test
     @Transactional
+    @CustomMockAdmin
     public void updateNonExistingCourse() throws Exception {
         long databaseSizeBeforeUpdate = courseRepository.count();
 
         // Create the Course
-        CourseDTO courseDTO = courseMapper.toDto(createEntity(entityManager));
+        CourseRequestDTO courseDTO = courseMapper.toRequestDto(createEntity(entityManager));
 
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restCourseMockMvc.perform(put("/api/v1/courses")
@@ -1025,17 +1083,18 @@ class CourseControllerTest {
                 .andExpect(status().isBadRequest());
 
         // Validate the Course in the database
-        List<Course> courseList = courseRepository.findAll();
-        assertThat(courseList).hasSize((int)databaseSizeBeforeUpdate);
+        long databaseSizeAfterUpdate = courseRepository.count();
+        assertThat(databaseSizeAfterUpdate).isEqualTo(databaseSizeBeforeUpdate);
     }
 
     @Test
     @Transactional
+    @CustomMockAdmin
     public void deleteCourse() throws Exception {
         // Initialize the database
         Course course = courseRepository.saveAndFlush(createEntity(entityManager));
 
-        int databaseSizeBeforeDelete = courseRepository.findAll().size();
+        long databaseSizeBeforeDelete = courseRepository.count();
 
         // Delete the course
         restCourseMockMvc.perform(delete("/api/v1/courses/{id}", course.getId())
@@ -1043,8 +1102,8 @@ class CourseControllerTest {
                 .andExpect(status().isNoContent());
 
         // Validate the database is empty
-        List<Course> courseList = courseRepository.findAll();
-        assertThat(courseList).hasSize(databaseSizeBeforeDelete - 1);
+        long databaseSizeAfterDelete = courseRepository.count();
+        assertThat(databaseSizeAfterDelete).isEqualTo(databaseSizeBeforeDelete - 1);
     }
 
     @Test
@@ -1065,10 +1124,10 @@ class CourseControllerTest {
     @Test
     @Transactional
     public void dtoEqualsVerifier() throws Exception {
-        TestUtil.equalsVerifier(CourseDTO.class);
-        CourseDTO courseDTO1 = new CourseDTO();
+        TestUtil.equalsVerifier(CourseResponseDTO.class);
+        CourseResponseDTO courseDTO1 = new CourseResponseDTO();
         courseDTO1.setId(1L);
-        CourseDTO courseDTO2 = new CourseDTO();
+        CourseResponseDTO courseDTO2 = new CourseResponseDTO();
         assertThat(courseDTO1).isNotEqualTo(courseDTO2);
         courseDTO2.setId(courseDTO1.getId());
         assertThat(courseDTO1).isEqualTo(courseDTO2);

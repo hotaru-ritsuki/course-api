@@ -1,13 +1,17 @@
 package com.example.courseapi.rest;
 
-import com.example.courseapi.config.MockMvcBuilder;
+import com.example.courseapi.config.MockMvcBuilderTestConfiguration;
+import com.example.courseapi.config.annotation.CustomMockAdmin;
 import com.example.courseapi.config.annotation.DefaultTestConfiguration;
 import com.example.courseapi.domain.Course;
 import com.example.courseapi.domain.Lesson;
-import com.example.courseapi.dto.LessonDTO;
+import com.example.courseapi.dto.request.LessonRequestDTO;
+import com.example.courseapi.dto.response.LessonResponseDTO;
 import com.example.courseapi.repository.LessonRepository;
 import com.example.courseapi.service.mapper.LessonMapper;
+import com.example.courseapi.util.JacksonUtil;
 import com.example.courseapi.util.TestUtil;
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -19,6 +23,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,7 +46,7 @@ class LessonControllerTest {
     private EntityManager entityManager;
 
     @Autowired
-    private MockMvcBuilder mockMvcBuilder;
+    private MockMvcBuilderTestConfiguration mockMvcBuilderTestConfiguration;
 
     @Autowired
     private LessonController lessonController;
@@ -64,7 +69,7 @@ class LessonControllerTest {
     @BeforeEach
     public void setup() {
         this.closable = MockitoAnnotations.openMocks(this);
-        this.restLessonMockMvc = mockMvcBuilder.forControllers(lessonController);
+        this.restLessonMockMvc = mockMvcBuilderTestConfiguration.forControllers(lessonController);
     }
 
     /**
@@ -79,14 +84,10 @@ class LessonControllerTest {
                 .description(DEFAULT_DESCRIPTION_TEXT)
                 .build();
         // Add required entity
-        Course course;
-        if (TestUtil.findOne(em, Course.class).isEmpty()) {
-            course = CourseControllerTest.createEntity(em);
-            em.persist(course);
-            em.flush();
-        } else {
-            course = TestUtil.findOne(em, Course.class).get(0);
-        }
+        Course course = CourseControllerTest.createEntity(em);
+        em.persist(course);
+        em.flush();
+
         lesson.setCourse(course);
         return lesson;
     }
@@ -109,42 +110,49 @@ class LessonControllerTest {
 
     @Test
     @Transactional
+    @CustomMockAdmin
     void createLesson() throws Exception {
         // Create lesson
-        LessonDTO lessonDTO = lessonMapper.toDto(createEntity(entityManager));
+        LessonRequestDTO lessonRequestDTO = lessonMapper.toRequestDto(createEntity(entityManager));
 
         long databaseSizeBeforeCreate = lessonRepository.count();
 
-        restLessonMockMvc.perform(post("/api/v1/lessons")
+        MvcResult lessonMvcResult = restLessonMockMvc.perform(post("/api/v1/lessons")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(lessonDTO)))
-                .andExpect(status().isCreated());
+                        .content(TestUtil.convertObjectToJsonBytes(lessonRequestDTO)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        LessonResponseDTO lessonResponseDTO = JacksonUtil.deserialize(lessonMvcResult.getResponse().getContentAsString(),
+                new TypeReference<LessonResponseDTO>() {});
 
         // Validate new Lesson in the database
-        List<Lesson> lessonList = lessonRepository.findAll();
-        assertEquals(lessonList.size(), databaseSizeBeforeCreate + 1);
-
-        Lesson testLesson = lessonList.get(lessonList.size() - 1);
-        assertThat(testLesson.getTitle()).isEqualTo(DEFAULT_TITLE_TEXT);
-        assertThat(testLesson.getDescription()).isEqualTo(DEFAULT_DESCRIPTION_TEXT);
+        long databaseSizeAfterCreate = lessonRepository.count();
+        assertThat(databaseSizeAfterCreate).isEqualTo(databaseSizeBeforeCreate + 1);
+        Optional<Lesson> savedLessonOpt = lessonRepository.findById(lessonResponseDTO.getId());
+        assertThat(savedLessonOpt).isPresent();
+        Lesson savedLesson = savedLessonOpt.get();
+        assertThat(savedLesson.getTitle()).isEqualTo(DEFAULT_TITLE_TEXT);
+        assertThat(savedLesson.getDescription()).isEqualTo(DEFAULT_DESCRIPTION_TEXT);
 
     }
 
     @Test
     @Transactional
+    @CustomMockAdmin
     public void createLessonWithExistingId() throws Exception {
 
         // Create the Lesson with an existing ID
-        LessonDTO lessonDTO = lessonMapper.toDto(createEntity(entityManager));
+        LessonRequestDTO lessonRequestDTO = lessonMapper.toRequestDto(createEntity(entityManager));
 
         long databaseSizeBeforeCreate = lessonRepository.count();
 
-        lessonDTO.setId(1L);
+        lessonRequestDTO.setId(1L);
 
         // An entity with an existing ID cannot be created, so this API call must fail
         restLessonMockMvc.perform(post("/api/v1/lessons")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(lessonDTO)))
+                        .content(TestUtil.convertObjectToJsonBytes(lessonRequestDTO)))
                 .andExpect(status().isBadRequest());
 
         // Validate the Lesson in the database
@@ -164,11 +172,11 @@ class LessonControllerTest {
         lesson.setTitle(null);
 
         // Create the Lesson, which fails.
-        LessonDTO lessonDTO = lessonMapper.toDto(lesson);
+        LessonRequestDTO lessonRequestDTO = lessonMapper.toRequestDto(lesson);
 
         restLessonMockMvc.perform(post("/api/v1/lessons")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(lessonDTO)))
+                        .content(TestUtil.convertObjectToJsonBytes(lessonRequestDTO)))
                 .andExpect(status().isBadRequest());
 
         // Validate the Lesson in the database
@@ -178,6 +186,7 @@ class LessonControllerTest {
 
     @Test
     @Transactional
+    @CustomMockAdmin
     public void checkTitle_shouldHaveLengthFrom2To100() throws Exception {
         Lesson lesson = createEntity(entityManager);
 
@@ -187,11 +196,11 @@ class LessonControllerTest {
         lesson.setTitle(RandomStringUtils.randomAlphabetic(1));
 
         // Create the Lesson, which fails.
-        LessonDTO lessonDTO = lessonMapper.toDto(lesson);
+        LessonRequestDTO lessonRequestDTO = lessonMapper.toRequestDto(lesson);
 
         restLessonMockMvc.perform(post("/api/v1/lessons")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(lessonDTO)))
+                        .content(TestUtil.convertObjectToJsonBytes(lessonRequestDTO)))
                 .andExpect(status().isBadRequest());
 
         // Validate the Lesson in the database
@@ -201,11 +210,11 @@ class LessonControllerTest {
         lesson.setTitle(RandomStringUtils.randomAlphabetic(2));
 
         // Create the Lesson, which fails.
-        lessonDTO = lessonMapper.toDto(lesson);
+        lessonRequestDTO = lessonMapper.toRequestDto(lesson);
 
         restLessonMockMvc.perform(post("/api/v1/lessons")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(lessonDTO)))
+                        .content(TestUtil.convertObjectToJsonBytes(lessonRequestDTO)))
                 .andExpect(status().isCreated());
 
         // Validate the Lesson in the database
@@ -216,11 +225,11 @@ class LessonControllerTest {
         lesson.setTitle(RandomStringUtils.randomAlphabetic(100));
 
         // Create the Lesson, which fails.
-        lessonDTO = lessonMapper.toDto(lesson);
+        lessonRequestDTO = lessonMapper.toRequestDto(lesson);
 
         restLessonMockMvc.perform(post("/api/v1/lessons")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(lessonDTO)))
+                        .content(TestUtil.convertObjectToJsonBytes(lessonRequestDTO)))
                 .andExpect(status().isCreated());
 
         // Validate the Lesson in the database
@@ -239,11 +248,11 @@ class LessonControllerTest {
         lesson.setDescription(null);
 
         // Create the Lesson, which fails.
-        LessonDTO lessonDTO = lessonMapper.toDto(lesson);
+        LessonRequestDTO lessonRequestDTO = lessonMapper.toRequestDto(lesson);
 
         restLessonMockMvc.perform(post("/api/v1/lessons")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(lessonDTO)))
+                        .content(TestUtil.convertObjectToJsonBytes(lessonRequestDTO)))
                 .andExpect(status().isBadRequest());
 
         // Validate the Lesson in the database
@@ -253,6 +262,7 @@ class LessonControllerTest {
 
     @Test
     @Transactional
+    @CustomMockAdmin
     public void checkDescription_shouldHaveLengthFrom10To255() throws Exception {
         Lesson lesson = createEntity(entityManager);
 
@@ -262,11 +272,11 @@ class LessonControllerTest {
         lesson.setDescription(RandomStringUtils.randomAlphabetic(5));
 
         // Create the Lesson, which fails.
-        LessonDTO lessonDTO = lessonMapper.toDto(lesson);
+        LessonRequestDTO lessonRequestDTO = lessonMapper.toRequestDto(lesson);
 
         restLessonMockMvc.perform(post("/api/v1/lessons")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(lessonDTO)))
+                        .content(TestUtil.convertObjectToJsonBytes(lessonRequestDTO)))
                 .andExpect(status().isBadRequest());
 
         // Validate the Lesson in the database
@@ -276,11 +286,11 @@ class LessonControllerTest {
         lesson.setDescription(RandomStringUtils.randomAlphabetic(10));
 
         // Create the Lesson, which fails.
-        lessonDTO = lessonMapper.toDto(lesson);
+        lessonRequestDTO = lessonMapper.toRequestDto(lesson);
 
         restLessonMockMvc.perform(post("/api/v1/lessons")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(lessonDTO)))
+                        .content(TestUtil.convertObjectToJsonBytes(lessonRequestDTO)))
                 .andExpect(status().isCreated());
 
         // Validate the Lesson in the database
@@ -291,11 +301,11 @@ class LessonControllerTest {
         lesson.setDescription(RandomStringUtils.randomAlphabetic(255));
 
         // Create the Lesson, which fails.
-        lessonDTO = lessonMapper.toDto(lesson);
+        lessonRequestDTO = lessonMapper.toRequestDto(lesson);
 
         restLessonMockMvc.perform(post("/api/v1/lessons")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(lessonDTO)))
+                        .content(TestUtil.convertObjectToJsonBytes(lessonRequestDTO)))
                 .andExpect(status().isCreated());
 
         // Validate the Lesson in the database
@@ -305,6 +315,7 @@ class LessonControllerTest {
 
     @Test
     @Transactional
+    @CustomMockAdmin
     public void getAllLessons() throws Exception {
         // Initialize the database
         Lesson lesson = lessonRepository.saveAndFlush(createEntity(entityManager));
@@ -321,6 +332,7 @@ class LessonControllerTest {
 
     @Test
     @Transactional
+    @CustomMockAdmin
     public void getAllLessonsForCourse() throws Exception {
         // Initialize the database
         Lesson lesson1 = lessonRepository.saveAndFlush(createEntity(entityManager));
@@ -329,7 +341,7 @@ class LessonControllerTest {
         Long courseId = lesson1.getCourse().getId();
 
         restLessonMockMvc.perform(
-                        get("/api/v1/lessons/courses/" + courseId)
+                        get("/api/v1/courses/" + courseId + "/lessons")
                                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -341,6 +353,7 @@ class LessonControllerTest {
 
     @Test
     @Transactional
+    @CustomMockAdmin
     public void getLesson() throws Exception {
         // Initialize the database
         Lesson lesson = lessonRepository.saveAndFlush(createEntity(entityManager));
@@ -357,6 +370,7 @@ class LessonControllerTest {
 
     @Test
     @Transactional
+    @CustomMockAdmin
     public void getNonExistingLesson() throws Exception {
         // Get the lesson
         restLessonMockMvc.perform(get("/api/v1/lessons/{id}", Long.MAX_VALUE)
@@ -366,6 +380,7 @@ class LessonControllerTest {
 
     @Test
     @Transactional
+    @CustomMockAdmin
     public void updateLesson() throws Exception {
         // Initialize the database
         Lesson lesson = lessonRepository.saveAndFlush(createEntity(entityManager));
@@ -373,58 +388,62 @@ class LessonControllerTest {
         long databaseSizeBeforeUpdate = lessonRepository.count();
 
         // Update the lesson
-        Optional<Lesson> updatedLessonOpt = lessonRepository.findById(lesson.getId());
-        assertThat(updatedLessonOpt).isPresent();
-        Lesson updatedLesson = updatedLessonOpt.get();
+        Optional<Lesson> lessonToUpdateOpt = lessonRepository.findById(lesson.getId());
+        assertThat(lessonToUpdateOpt).isPresent();
+        Lesson lessonToUpdate = lessonToUpdateOpt.get();
         // Disconnect from session so that the updates on updatedLesson are not directly saved in db
-        entityManager.detach(updatedLesson);
+        entityManager.detach(lessonToUpdate);
 
-        updatedLesson
+        lessonToUpdate
                 .setTitle(UPDATED_TITLE_TEXT);
-        updatedLesson
+        lessonToUpdate
                 .setDescription(UPDATED_DESCRIPTION_TEXT);
 
-        LessonDTO lessonDTO = lessonMapper.toDto(updatedLesson);
+        LessonRequestDTO lessonRequestDTO = lessonMapper.toRequestDto(lessonToUpdate);
 
         restLessonMockMvc.perform(put("/api/v1/lessons")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(lessonDTO)))
+                        .content(TestUtil.convertObjectToJsonBytes(lessonRequestDTO)))
                 .andExpect(status().isOk());
 
         // Validate the Lesson in the database
-        List<Lesson> lessonList = lessonRepository.findAll();
-        assertThat(lessonList).hasSize((int) databaseSizeBeforeUpdate);
-        Lesson testLesson = lessonList.get(lessonList.size() - 1);
-        assertThat(testLesson.getTitle()).isEqualTo(UPDATED_TITLE_TEXT);
-        assertThat(testLesson.getDescription()).isEqualTo(UPDATED_DESCRIPTION_TEXT);
+        long databaseSizeAfterUpdate = lessonRepository.count();
+        assertThat(databaseSizeAfterUpdate).isEqualTo(databaseSizeBeforeUpdate);
+        Optional<Lesson> updatedLessonOpt = lessonRepository.findById(lesson.getId());
+        assertThat(updatedLessonOpt).isPresent();
+        Lesson updatedLesson = updatedLessonOpt.get();
+        assertThat(updatedLesson.getTitle()).isEqualTo(UPDATED_TITLE_TEXT);
+        assertThat(updatedLesson.getDescription()).isEqualTo(UPDATED_DESCRIPTION_TEXT);
     }
 
     @Test
     @Transactional
+    @CustomMockAdmin
     public void updateNonExistingLesson() throws Exception {
         // Create the Lesson
-        LessonDTO lessonDTO = lessonMapper.toDto(createEntity(entityManager));
+        LessonRequestDTO lessonRequestDTO = lessonMapper.toRequestDto(createEntity(entityManager));
 
         long databaseSizeBeforeUpdate = lessonRepository.count();
 
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restLessonMockMvc.perform(put("/api/v1/lessons")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(lessonDTO)))
+                        .content(TestUtil.convertObjectToJsonBytes(lessonRequestDTO)))
                 .andExpect(status().isBadRequest());
 
         // Validate the Lesson in the database
-        List<Lesson> lessonList = lessonRepository.findAll();
-        assertThat(lessonList).hasSize((int)databaseSizeBeforeUpdate);
+        long databaseSizeAfterUpdate = lessonRepository.count();
+        assertThat(databaseSizeAfterUpdate).isEqualTo(databaseSizeBeforeUpdate);
     }
 
     @Test
     @Transactional
+    @CustomMockAdmin
     public void deleteLesson() throws Exception {
         // Initialize the database
         Lesson lesson = lessonRepository.saveAndFlush(createEntity(entityManager));
 
-        int databaseSizeBeforeDelete = lessonRepository.findAll().size();
+        long databaseSizeBeforeDelete = lessonRepository.count();
 
         // Delete the lesson
         restLessonMockMvc.perform(delete("/api/v1/lessons/{id}", lesson.getId())
@@ -432,8 +451,8 @@ class LessonControllerTest {
                 .andExpect(status().isNoContent());
 
         // Validate the database is empty
-        List<Lesson> lessonList = lessonRepository.findAll();
-        assertThat(lessonList).hasSize(databaseSizeBeforeDelete - 1);
+        long databaseSizeAfterDelete = lessonRepository.count();
+        assertThat(databaseSizeAfterDelete).isEqualTo(databaseSizeBeforeDelete - 1);
     }
 
     @Test
@@ -454,16 +473,16 @@ class LessonControllerTest {
     @Test
     @Transactional
     public void dtoEqualsVerifier() throws Exception {
-        TestUtil.equalsVerifier(LessonDTO.class);
-        LessonDTO lessonDTO1 = new LessonDTO();
-        lessonDTO1.setId(1L);
-        LessonDTO lessonDTO2 = new LessonDTO();
-        assertThat(lessonDTO1).isNotEqualTo(lessonDTO2);
-        lessonDTO2.setId(lessonDTO1.getId());
-        assertThat(lessonDTO1).isEqualTo(lessonDTO2);
-        lessonDTO2.setId(2L);
-        assertThat(lessonDTO1).isNotEqualTo(lessonDTO2);
-        lessonDTO1.setId(null);
-        assertThat(lessonDTO1).isNotEqualTo(lessonDTO2);
+        TestUtil.equalsVerifier(LessonResponseDTO.class);
+        LessonResponseDTO lessonResponseDTO1 = new LessonResponseDTO();
+        lessonResponseDTO1.setId(1L);
+        LessonResponseDTO lessonResponseDTO2 = new LessonResponseDTO();
+        assertThat(lessonResponseDTO1).isNotEqualTo(lessonResponseDTO2);
+        lessonResponseDTO2.setId(lessonResponseDTO1.getId());
+        assertThat(lessonResponseDTO1).isEqualTo(lessonResponseDTO2);
+        lessonResponseDTO2.setId(2L);
+        assertThat(lessonResponseDTO1).isNotEqualTo(lessonResponseDTO2);
+        lessonResponseDTO1.setId(null);
+        assertThat(lessonResponseDTO1).isNotEqualTo(lessonResponseDTO2);
     }
 }

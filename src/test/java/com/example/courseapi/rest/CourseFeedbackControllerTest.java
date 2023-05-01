@@ -1,15 +1,20 @@
 package com.example.courseapi.rest;
 
-import com.example.courseapi.config.MockMvcBuilder;
+import com.example.courseapi.config.MockMvcBuilderTestConfiguration;
+import com.example.courseapi.config.annotation.CustomMockAdmin;
+import com.example.courseapi.config.annotation.CustomMockStudent;
 import com.example.courseapi.config.annotation.DefaultTestConfiguration;
 import com.example.courseapi.domain.Course;
 import com.example.courseapi.domain.CourseFeedback;
 import com.example.courseapi.domain.Student;
-import com.example.courseapi.dto.CourseFeedbackDTO;
+import com.example.courseapi.dto.request.CourseFeedbackRequestDTO;
+import com.example.courseapi.dto.response.CourseFeedbackResponseDTO;
 import com.example.courseapi.repository.CourseFeedbackRepository;
 import com.example.courseapi.service.mapper.CourseFeedbackMapper;
 import com.example.courseapi.util.EntityCreatorUtil;
+import com.example.courseapi.util.JacksonUtil;
 import com.example.courseapi.util.TestUtil;
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -20,7 +25,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -40,7 +49,7 @@ class CourseFeedbackControllerTest {
     private EntityManager entityManager;
 
     @Autowired
-    private MockMvcBuilder mockMvcBuilder;
+    private MockMvcBuilderTestConfiguration mockMvcBuilderTestConfiguration;
 
     @Autowired
     private CourseFeedbackController courseFeedbackController;
@@ -63,7 +72,7 @@ class CourseFeedbackControllerTest {
     @BeforeEach
     public void setup() {
         this.closable = MockitoAnnotations.openMocks(this);
-        this.restCourseFeedbackMockMvc = mockMvcBuilder.forControllers(courseFeedbackController);
+        this.restCourseFeedbackMockMvc = mockMvcBuilderTestConfiguration.forControllers(courseFeedbackController);
     }
 
     /**
@@ -77,62 +86,66 @@ class CourseFeedbackControllerTest {
                 .feedback(DEFAULT_FEEDBACK_TEXT)
                 .build();
         // Add required entity
-        Student student;
-        if (TestUtil.findOne(em, Student.class).isEmpty()) {
-            student = EntityCreatorUtil.createStudent();
+        Optional<Object> userOpt = Optional.ofNullable(SecurityContextHolder.getContext())
+                .map(SecurityContext::getAuthentication)
+                .map(Authentication::getPrincipal);
+        if (userOpt.isPresent() && userOpt.get() instanceof Student student) {
+            courseFeedback.setStudent(student);
+        } else {
+            Student student = EntityCreatorUtil.createStudent();
             em.persist(student);
             em.flush();
-        } else {
-            student = TestUtil.findOne(em, Student.class).get(0);
+            courseFeedback.setStudent(student);
         }
-        courseFeedback.setStudent(student);
-        Course course;
-        if (TestUtil.findOne(em, Course.class).isEmpty()) {
-            course = CourseControllerTest.createEntity(em);
-            em.persist(course);
-            em.flush();
-        } else {
-            course = TestUtil.findOne(em, Course.class).get(0);
-        }
+        Course course = CourseControllerTest.createEntity(em);
+        em.persist(course);
+        em.flush();
         courseFeedback.setCourse(course);
         return courseFeedback;
     }
 
     @Test
     @Transactional
+    @CustomMockStudent
     void createCourseFeedback() throws Exception {
         long databaseSizeBeforeCreate = courseFeedbackRepository.count();
 
         // Create courseFeedback
-        CourseFeedbackDTO courseFeedbackDTO = courseFeedbackMapper.toDto(createEntity(entityManager));
+        CourseFeedbackRequestDTO courseFeedbackRequestDTO = courseFeedbackMapper.toRequestDto(createEntity(entityManager));
 
-        restCourseFeedbackMockMvc.perform(post("/api/v1/course-feedbacks")
+        MvcResult courseFeedbackMvcresult = restCourseFeedbackMockMvc.perform(post("/api/v1/course-feedbacks")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(courseFeedbackDTO)))
-                .andExpect(status().isCreated());
+                        .content(TestUtil.convertObjectToJsonBytes(courseFeedbackRequestDTO)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        CourseFeedbackResponseDTO courseFeedbackResponseDTO = JacksonUtil.deserialize(courseFeedbackMvcresult.getResponse().getContentAsString(),
+                new TypeReference<CourseFeedbackResponseDTO>() {});
 
         // Validate new CourseFeedback in the database
-        List<CourseFeedback> courseFeedbackList = courseFeedbackRepository.findAll();
-        assertEquals(courseFeedbackList.size(), databaseSizeBeforeCreate + 1);
-
-        CourseFeedback testCourseFeedback = courseFeedbackList.get(courseFeedbackList.size() - 1);
-        assertThat(testCourseFeedback.getFeedback()).isEqualTo(DEFAULT_FEEDBACK_TEXT);
+        long databaseSizeAfterCreate = courseFeedbackRepository.count();
+        assertThat(databaseSizeAfterCreate).isEqualTo(databaseSizeBeforeCreate + 1);
+        Optional<CourseFeedback> courseFeedbackOpt = courseFeedbackRepository.findById(courseFeedbackResponseDTO.getId());
+        assertThat(courseFeedbackOpt).isPresent();
+        CourseFeedback courseFeedback = courseFeedbackOpt.get();
+        assertThat(courseFeedback.getFeedback()).isEqualTo(DEFAULT_FEEDBACK_TEXT);
 
     }
 
     @Test
     @Transactional
+    @CustomMockStudent
     public void createCourseFeedbackWithExistingId() throws Exception {
         long databaseSizeBeforeCreate = courseFeedbackRepository.count();
 
         // Create the CourseFeedback with an existing ID
-        CourseFeedbackDTO courseFeedbackDTO = courseFeedbackMapper.toDto(createEntity(entityManager));
-        courseFeedbackDTO.setId(1L);
+        CourseFeedbackResponseDTO courseFeedbackResponseDTO = courseFeedbackMapper.toResponseDto(createEntity(entityManager));
+        courseFeedbackResponseDTO.setId(1L);
 
         // An entity with an existing ID cannot be created, so this API call must fail
         restCourseFeedbackMockMvc.perform(post("/api/v1/course-feedbacks")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(courseFeedbackDTO)))
+                        .content(TestUtil.convertObjectToJsonBytes(courseFeedbackResponseDTO)))
                 .andExpect(status().isBadRequest());
 
         // Validate the CourseFeedback in the database
@@ -150,11 +163,11 @@ class CourseFeedbackControllerTest {
         courseFeedback.setFeedback(null);
 
         // Create the CourseFeedback, which fails.
-        CourseFeedbackDTO courseFeedbackDTO = courseFeedbackMapper.toDto(courseFeedback);
+        CourseFeedbackResponseDTO courseFeedbackResponseDTO = courseFeedbackMapper.toResponseDto(courseFeedback);
 
         restCourseFeedbackMockMvc.perform(post("/api/v1/course-feedbacks")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(courseFeedbackDTO)))
+                        .content(TestUtil.convertObjectToJsonBytes(courseFeedbackResponseDTO)))
                 .andExpect(status().isBadRequest());
 
         // Validate the CourseFeedback in the database
@@ -164,6 +177,7 @@ class CourseFeedbackControllerTest {
 
     @Test
     @Transactional
+    @CustomMockStudent
     public void checkTitle_shouldHaveLengthFrom10To255() throws Exception {
         long databaseSizeBeforeCreate = courseFeedbackRepository.count();
 
@@ -172,11 +186,11 @@ class CourseFeedbackControllerTest {
         courseFeedback.setFeedback(RandomStringUtils.randomAlphabetic(1));
 
         // Create the CourseFeedback, which fails.
-        CourseFeedbackDTO courseFeedbackDTO = courseFeedbackMapper.toDto(courseFeedback);
+        CourseFeedbackResponseDTO courseFeedbackResponseDTO = courseFeedbackMapper.toResponseDto(courseFeedback);
 
         restCourseFeedbackMockMvc.perform(post("/api/v1/course-feedbacks")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(courseFeedbackDTO)))
+                        .content(TestUtil.convertObjectToJsonBytes(courseFeedbackResponseDTO)))
                 .andExpect(status().isBadRequest());
 
         // Validate the CourseFeedback in the database
@@ -186,11 +200,11 @@ class CourseFeedbackControllerTest {
         courseFeedback.setFeedback(RandomStringUtils.randomAlphabetic(10));
 
         // Create the CourseFeedback, which fails.
-        courseFeedbackDTO = courseFeedbackMapper.toDto(courseFeedback);
+        courseFeedbackResponseDTO = courseFeedbackMapper.toResponseDto(courseFeedback);
 
         restCourseFeedbackMockMvc.perform(post("/api/v1/course-feedbacks")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(courseFeedbackDTO)))
+                        .content(TestUtil.convertObjectToJsonBytes(courseFeedbackResponseDTO)))
                 .andExpect(status().isCreated());
 
         // Validate the CourseFeedback in the database
@@ -201,11 +215,11 @@ class CourseFeedbackControllerTest {
         courseFeedback.setFeedback(RandomStringUtils.randomAlphabetic(255));
 
         // Create the CourseFeedback, which fails.
-        courseFeedbackDTO = courseFeedbackMapper.toDto(courseFeedback);
+        courseFeedbackResponseDTO = courseFeedbackMapper.toResponseDto(courseFeedback);
 
         restCourseFeedbackMockMvc.perform(post("/api/v1/course-feedbacks")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(courseFeedbackDTO)))
+                        .content(TestUtil.convertObjectToJsonBytes(courseFeedbackResponseDTO)))
                 .andExpect(status().isCreated());
 
         // Validate the CourseFeedback in the database
@@ -215,6 +229,7 @@ class CourseFeedbackControllerTest {
 
     @Test
     @Transactional
+    @CustomMockAdmin
     public void getAllCourseFeedbacks() throws Exception {
         // Initialize the database
         CourseFeedback courseFeedback = courseFeedbackRepository.saveAndFlush(createEntity(entityManager));
@@ -230,6 +245,7 @@ class CourseFeedbackControllerTest {
 
     @Test
     @Transactional
+    @CustomMockAdmin
     public void getCourseFeedback() throws Exception {
         // Initialize the database
         CourseFeedback courseFeedback = courseFeedbackRepository.saveAndFlush(createEntity(entityManager));
@@ -245,6 +261,7 @@ class CourseFeedbackControllerTest {
 
     @Test
     @Transactional
+    @CustomMockStudent
     public void getNonExistingCourseFeedback() throws Exception {
         // Get the courseFeedback
         restCourseFeedbackMockMvc.perform(get("/api/v1/course-feedbacks/{id}", Long.MAX_VALUE)
@@ -254,6 +271,7 @@ class CourseFeedbackControllerTest {
 
     @Test
     @Transactional
+    @CustomMockStudent
     public void updateCourseFeedback() throws Exception {
         // Initialize the database
         CourseFeedback courseFeedback = courseFeedbackRepository.saveAndFlush(createEntity(entityManager));
@@ -270,46 +288,53 @@ class CourseFeedbackControllerTest {
         updatedCourseFeedback
                 .setFeedback(UPDATED_FEEDBACK_TEXT);
 
-        CourseFeedbackDTO courseFeedbackDTO = courseFeedbackMapper.toDto(updatedCourseFeedback);
+        CourseFeedbackResponseDTO courseFeedbackResponseDTO = courseFeedbackMapper.toResponseDto(updatedCourseFeedback);
 
         restCourseFeedbackMockMvc.perform(put("/api/v1/course-feedbacks")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(courseFeedbackDTO)))
+                        .content(TestUtil.convertObjectToJsonBytes(courseFeedbackResponseDTO)))
                 .andExpect(status().isOk());
 
         // Validate the CourseFeedback in the database
-        List<CourseFeedback> courseFeedbackList = courseFeedbackRepository.findAll();
-        assertThat(courseFeedbackList).hasSize((int) databaseSizeBeforeUpdate);
-        CourseFeedback testCourseFeedback = courseFeedbackList.get(courseFeedbackList.size() - 1);
-        assertThat(testCourseFeedback.getFeedback()).isEqualTo(UPDATED_FEEDBACK_TEXT);
+
+        // Validate new CourseFeedback in the database
+        long databaseSizeAfterUpdate = courseFeedbackRepository.count();
+        assertThat(databaseSizeAfterUpdate).isEqualTo(databaseSizeBeforeUpdate);
+        Optional<CourseFeedback> courseFeedbackOpt = courseFeedbackRepository.findById(courseFeedbackResponseDTO.getId());
+        assertThat(courseFeedbackOpt).isPresent();
+        CourseFeedback courseFeedbackAfterUpdate = courseFeedbackOpt.get();
+        assertThat(courseFeedbackAfterUpdate.getFeedback()).isEqualTo(UPDATED_FEEDBACK_TEXT);
     }
 
     @Test
     @Transactional
+    @CustomMockStudent
     public void updateNonExistingCourseFeedback() throws Exception {
         long databaseSizeBeforeUpdate = courseFeedbackRepository.count();
 
         // Create the CourseFeedback
-        CourseFeedbackDTO courseFeedbackDTO = courseFeedbackMapper.toDto(createEntity(entityManager));
+        CourseFeedbackResponseDTO courseFeedbackResponseDTO = courseFeedbackMapper.toResponseDto(createEntity(entityManager));
 
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restCourseFeedbackMockMvc.perform(put("/api/v1/course-feedbacks")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(TestUtil.convertObjectToJsonBytes(courseFeedbackDTO)))
+                        .content(TestUtil.convertObjectToJsonBytes(courseFeedbackResponseDTO)))
                 .andExpect(status().isBadRequest());
 
         // Validate the CourseFeedback in the database
-        List<CourseFeedback> courseFeedbackList = courseFeedbackRepository.findAll();
-        assertThat(courseFeedbackList).hasSize((int)databaseSizeBeforeUpdate);
+        long databaseSizeAfterUpdate = courseFeedbackRepository.count();
+
+        assertThat(databaseSizeAfterUpdate).isEqualTo(databaseSizeBeforeUpdate);
     }
 
     @Test
     @Transactional
+    @CustomMockAdmin
     public void deleteCourseFeedback() throws Exception {
         // Initialize the database
         CourseFeedback courseFeedback = courseFeedbackRepository.saveAndFlush(createEntity(entityManager));
 
-        int databaseSizeBeforeDelete = courseFeedbackRepository.findAll().size();
+        long databaseSizeBeforeDelete = courseFeedbackRepository.count();
 
         // Delete the courseFeedback
         restCourseFeedbackMockMvc.perform(delete("/api/v1/course-feedbacks/{id}", courseFeedback.getId())
@@ -317,8 +342,9 @@ class CourseFeedbackControllerTest {
                 .andExpect(status().isNoContent());
 
         // Validate the database is empty
-        List<CourseFeedback> courseFeedbackList = courseFeedbackRepository.findAll();
-        assertThat(courseFeedbackList).hasSize(databaseSizeBeforeDelete - 1);
+
+        long databaseSizeAfterDelete = courseFeedbackRepository.count();
+        assertThat(databaseSizeAfterDelete).isEqualTo(databaseSizeBeforeDelete - 1);
     }
 
     @Test
@@ -339,16 +365,16 @@ class CourseFeedbackControllerTest {
     @Test
     @Transactional
     public void dtoEqualsVerifier() throws Exception {
-        TestUtil.equalsVerifier(CourseFeedbackDTO.class);
-        CourseFeedbackDTO courseFeedbackDTO1 = new CourseFeedbackDTO();
-        courseFeedbackDTO1.setId(1L);
-        CourseFeedbackDTO courseFeedbackDTO2 = new CourseFeedbackDTO();
-        assertThat(courseFeedbackDTO1).isNotEqualTo(courseFeedbackDTO2);
-        courseFeedbackDTO2.setId(courseFeedbackDTO1.getId());
-        assertThat(courseFeedbackDTO1).isEqualTo(courseFeedbackDTO2);
-        courseFeedbackDTO2.setId(2L);
-        assertThat(courseFeedbackDTO1).isNotEqualTo(courseFeedbackDTO2);
-        courseFeedbackDTO1.setId(null);
-        assertThat(courseFeedbackDTO1).isNotEqualTo(courseFeedbackDTO2);
+        TestUtil.equalsVerifier(CourseFeedbackResponseDTO.class);
+        CourseFeedbackResponseDTO courseFeedbackResponseDTO1 = new CourseFeedbackResponseDTO();
+        courseFeedbackResponseDTO1.setId(1L);
+        CourseFeedbackResponseDTO courseFeedbackResponseDTO2 = new CourseFeedbackResponseDTO();
+        assertThat(courseFeedbackResponseDTO1).isNotEqualTo(courseFeedbackResponseDTO2);
+        courseFeedbackResponseDTO2.setId(courseFeedbackResponseDTO1.getId());
+        assertThat(courseFeedbackResponseDTO1).isEqualTo(courseFeedbackResponseDTO2);
+        courseFeedbackResponseDTO2.setId(2L);
+        assertThat(courseFeedbackResponseDTO1).isNotEqualTo(courseFeedbackResponseDTO2);
+        courseFeedbackResponseDTO1.setId(null);
+        assertThat(courseFeedbackResponseDTO1).isNotEqualTo(courseFeedbackResponseDTO2);
     }
 }

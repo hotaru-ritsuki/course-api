@@ -2,8 +2,11 @@ package com.example.courseapi.rest;
 
 import com.example.courseapi.config.EntityHeaderCreator;
 import com.example.courseapi.config.args.generic.Filters;
+import com.example.courseapi.domain.Student;
+import com.example.courseapi.dto.request.CourseFeedbackRequestDTO;
+import com.example.courseapi.dto.response.CourseFeedbackResponseDTO;
+import com.example.courseapi.security.annotation.CurrentUser;
 import com.example.courseapi.util.ResponseUtil;
-import com.example.courseapi.dto.CourseFeedbackDTO;
 import com.example.courseapi.exception.SystemException;
 import com.example.courseapi.exception.code.ErrorCode;
 import com.example.courseapi.service.CourseFeedbackService;
@@ -12,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -24,6 +28,7 @@ import java.util.Optional;
  */
 @RestController
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 @RequestMapping(value = "/api/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 public class CourseFeedbackController {
     private static final String ENTITY_NAME = "CourseFeedback";
@@ -34,18 +39,20 @@ public class CourseFeedbackController {
     /**
      * {@code POST /course-feedbacks} : Create a new courseFeedback.
      *
-     * @param courseFeedbackDTO the courseFeedback to create.
-     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new courseFeedbackDTO,
+     * @param courseFeedbackRequestDTO the courseFeedback to create.
+     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new courseFeedbackResponseDTO,
      * or with status {@code 400 (Bad Request)} if the courseFeedback has already an ID.
      *
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
+    @PreAuthorize("@accessValidator.courseFeedbackAccess(#courseFeedbackRequestDTO.courseId)")
     @PostMapping("/course-feedbacks")
-    public ResponseEntity<CourseFeedbackDTO> createCourseFeedback(@Valid @RequestBody CourseFeedbackDTO courseFeedbackDTO) throws URISyntaxException {
-        if (courseFeedbackDTO.getId() != null) {
+    public ResponseEntity<CourseFeedbackResponseDTO> createCourseFeedback(@Valid @RequestBody CourseFeedbackRequestDTO courseFeedbackRequestDTO,
+                                                                          @CurrentUser Student student) throws URISyntaxException {
+        if (courseFeedbackRequestDTO.getId() != null) {
             throw new SystemException("A new courseFeedback cannot already have an ID", ErrorCode.BAD_REQUEST);
         }
-        CourseFeedbackDTO result = courseFeedbackService.save(courseFeedbackDTO);
+        CourseFeedbackResponseDTO result = courseFeedbackService.save(courseFeedbackRequestDTO, student);
         return ResponseEntity.created(new URI("/api/course-feedbacks/" + result.getId()))
                 .headers(entityHeaderCreator.createEntityCreationAlert(ENTITY_NAME, result.getId().toString()))
                 .body(result);
@@ -54,19 +61,21 @@ public class CourseFeedbackController {
     /**
      * {@code PUT  /course-feedbacks} : Updates an existing courseFeedback.
      *
-     * @param courseFeedbackDTO the courseFeedbackDTO to update.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated courseFeedbackDTO,
-     * or with status {@code 400 (Bad Request)} if the courseFeedbackDTO is not valid,
-     * or with status {@code 500 (Internal Server Error)} if the courseFeedbackDTO couldn't be updated.
+     * @param courseFeedbackRequestDTO the courseFeedbackResponseDTO to update.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated courseFeedbackResponseDTO,
+     * or with status {@code 400 (Bad Request)} if the courseFeedbackResponseDTO is not valid,
+     * or with status {@code 500 (Internal Server Error)} if the courseFeedbackResponseDTO couldn't be updated.
      */
+    @PreAuthorize("@accessValidator.courseFeedbackAccess(#courseFeedbackRequestDTO.courseId)")
     @PutMapping("/course-feedbacks")
-    public ResponseEntity<CourseFeedbackDTO> updateCourseFeedback(@Valid @RequestBody CourseFeedbackDTO courseFeedbackDTO) {
-        if (courseFeedbackDTO.getId() == null) {
+    public ResponseEntity<CourseFeedbackResponseDTO> updateCourseFeedback(@Valid @RequestBody CourseFeedbackRequestDTO courseFeedbackRequestDTO,
+                                                                          @CurrentUser Student student) {
+        if (courseFeedbackRequestDTO.getId() == null) {
             throw new SystemException("Invalid id", ErrorCode.BAD_REQUEST);
         }
-        CourseFeedbackDTO result = courseFeedbackService.save(courseFeedbackDTO);
+        CourseFeedbackResponseDTO result = courseFeedbackService.save(courseFeedbackRequestDTO, student);
         return ResponseEntity.ok()
-                .headers(entityHeaderCreator.createEntityUpdateAlert(ENTITY_NAME, courseFeedbackDTO.getId().toString()))
+                .headers(entityHeaderCreator.createEntityUpdateAlert(ENTITY_NAME, courseFeedbackRequestDTO.getId().toString()))
                 .body(result);
     }
 
@@ -76,34 +85,35 @@ public class CourseFeedbackController {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of courseFeedbacks in body.
      */
     @GetMapping("/course-feedbacks")
-    public Page<CourseFeedbackDTO> getAllCourseFeedbacks(Filters filters, Pageable pageable) {
+    public Page<CourseFeedbackResponseDTO> getAllCourseFeedbacks(Filters filters, Pageable pageable) {
         return courseFeedbackService.findAll(filters, pageable);
     }
 
     /**
      * {@code GET  /course-feedbacks/:id} : get the "id" courseFeedback.
      *
-     * @param id the id of the courseFeedbackDTO to retrieve.
+     * @param courseFeedbackId the id of the courseFeedbackDTO to retrieve.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the courseFeedbackDTO,
      * or with status {@code 404 (Not Found)}.
      */
-    @GetMapping("/course-feedbacks/{id}")
-    public ResponseEntity<CourseFeedbackDTO> getCourseFeedback(@PathVariable Long id) {
-        Optional<CourseFeedbackDTO> courseFeedbackDTO = courseFeedbackService.findById(id);
+    @GetMapping("/course-feedbacks/{courseFeedbackId}")
+    public ResponseEntity<CourseFeedbackResponseDTO> getCourseFeedback(@PathVariable Long courseFeedbackId) {
+        Optional<CourseFeedbackResponseDTO> courseFeedbackDTO = courseFeedbackService.findById(courseFeedbackId);
         return ResponseUtil.wrapOrNotFound(courseFeedbackDTO);
     }
 
     /**
      * {@code DELETE  /course-feedbacks/:id} : delete the "id" courseFeedback.
      *
-     * @param id the id of the courseFeedbackDTO to delete.
+     * @param courseFeedbackId the id of the courseFeedbackDTO to delete.
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
-    @DeleteMapping("/course-feedbacks/{id}")
-    public ResponseEntity<Void> deleteCourseFeedback(@PathVariable Long id) {
-        courseFeedbackService.delete(id);
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/course-feedbacks/{courseFeedbackId}")
+    public ResponseEntity<Void> deleteCourseFeedback(@PathVariable Long courseFeedbackId) {
+        courseFeedbackService.delete(courseFeedbackId);
         return ResponseEntity.noContent()
-                .headers(entityHeaderCreator.createEntityDeletionAlert(ENTITY_NAME, id.toString()))
+                .headers(entityHeaderCreator.createEntityDeletionAlert(ENTITY_NAME, courseFeedbackId.toString()))
                 .build();
     }
 }

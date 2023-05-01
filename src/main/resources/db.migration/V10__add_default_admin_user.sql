@@ -14,7 +14,7 @@ VALUES (
         'Admin',
         'Phantom',
         'admin.phantom@courses.com',
-        '$2a$12$YZ3AvqMHayJFaVbdrUZNNOJpWnVWpGhQwvLCJBAQBt3uwAWLhak4u',
+        '$2a$12$icb9BIES3BgjXkHv1V2acu4YPcYJGNUVwjg2gZtyuSDVO4bQ/Flte',
         'ADMIN',
         CURRENT_DATE,
         CURRENT_DATE,

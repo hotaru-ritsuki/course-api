@@ -2,7 +2,8 @@ package com.example.courseapi.service.mapper;
 
 import com.example.courseapi.domain.Course;
 import com.example.courseapi.domain.Instructor;
-import com.example.courseapi.dto.InstructorResponseDTO;
+import com.example.courseapi.dto.request.UserRequestDTO;
+import com.example.courseapi.dto.response.InstructorResponseDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -18,10 +19,10 @@ import java.util.stream.Collectors;
  */
 @Mapper(componentModel = "spring")
 @Component
-public interface InstructorMapper extends EntityMapper<InstructorResponseDTO, Instructor> {
+public interface InstructorMapper extends EntityMapper<UserRequestDTO, InstructorResponseDTO, Instructor> {
 
     @Mapping(source = "instructorCourses", target = "instructorCourseIds", qualifiedByName = "coursesToIds")
-    InstructorResponseDTO toDto(Instructor instructor);
+    InstructorResponseDTO toResponseDto(Instructor instructor);
 
     @Named("coursesToIds")
     static Set<Long> coursesToIds(Set<Course> instructorCourses) {

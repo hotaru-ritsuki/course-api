@@ -15,6 +15,5 @@ import java.lang.annotation.*;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = CourseApiApplication.class)
 //@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@ActiveProfiles({"junit"})
 public @interface DefaultTestConfiguration {
 }

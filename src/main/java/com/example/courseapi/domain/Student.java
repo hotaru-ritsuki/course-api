@@ -20,11 +20,23 @@ public class Student extends User {
 
     @Size(max = 5)
     @Builder.Default
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            schema = "course_management",
-            name = "courses_students",
-            joinColumns = @JoinColumn(name = "student_id"),
-            inverseJoinColumns = @JoinColumn(name = "course_id"))
+    @ManyToMany(mappedBy = "students", fetch = FetchType.EAGER)
     private Set<Course> studentCourses = new HashSet<>();
+
+    @PreRemove
+    private void deleteRelations() {
+        for (Course course : this.studentCourses) {
+            this.removeStudentCourse(course);
+        }
+    }
+
+    public void addStudentCourse(Course course) {
+        this.studentCourses.add(course);
+        course.getStudents().add(this);
+    }
+
+    public void removeStudentCourse(Course course) {
+        this.studentCourses.remove(course);
+        course.getStudents().remove(this);
+    }
 }

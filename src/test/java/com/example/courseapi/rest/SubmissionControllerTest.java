@@ -1,18 +1,19 @@
 package com.example.courseapi.rest;
 
-import com.example.courseapi.config.MockMvcBuilder;
+import com.example.courseapi.config.MockMvcBuilderTestConfiguration;
 import com.example.courseapi.config.annotation.CustomMockAdmin;
 import com.example.courseapi.config.annotation.CustomMockInstructor;
 import com.example.courseapi.config.annotation.DefaultTestConfiguration;
 import com.example.courseapi.domain.*;
-import com.example.courseapi.dto.GradeDTO;
-import com.example.courseapi.dto.SubmissionDTO;
+import com.example.courseapi.dto.request.SubmissionRequestDTO;
+import com.example.courseapi.dto.response.SubmissionResponseDTO;
+import com.example.courseapi.dto.request.GradeDTO;
 import com.example.courseapi.repository.SubmissionRepository;
-import com.example.courseapi.repository.LessonRepository;
-import com.example.courseapi.repository.StudentRepository;
 import com.example.courseapi.service.mapper.SubmissionMapper;
 import com.example.courseapi.util.EntityCreatorUtil;
+import com.example.courseapi.util.JacksonUtil;
 import com.example.courseapi.util.TestUtil;
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.hamcrest.Matchers;
@@ -22,11 +23,14 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,7 +45,7 @@ class SubmissionControllerTest {
     private EntityManager entityManager;
 
     @Autowired
-    private MockMvcBuilder mockMvcBuilder;
+    private MockMvcBuilderTestConfiguration mockMvcBuilderTestConfiguration;
 
     @Autowired
     private SubmissionController submissionController;
@@ -64,7 +68,7 @@ class SubmissionControllerTest {
     @BeforeEach
     public void setup() {
         this.closable = MockitoAnnotations.openMocks(this);
-        this.restSubmissionMockMvc = mockMvcBuilder.forControllers(submissionController);
+        this.restSubmissionMockMvc = mockMvcBuilderTestConfiguration.forControllers(submissionController);
     }
 
     /**
@@ -74,24 +78,20 @@ class SubmissionControllerTest {
      * if they test an entity which requires the current entity
      */
     public static Submission createEntity(EntityManager em, Double grade) {
-        Lesson lesson;
-        if (TestUtil.findOne(em, Lesson.class).isEmpty()) {
-            lesson = LessonControllerTest.createEntity(em);
-            em.persist(lesson);
-            em.flush();
-        } else {
-            lesson = TestUtil.findOne(em, Lesson.class).get(0);
-        }
-        Student student;
-        if (TestUtil.findOne(em, Student.class).isEmpty()) {
-            student = EntityCreatorUtil.createStudent();
-            em.persist(student);
-            em.flush();
-        } else {
-            student = TestUtil.findOne(em, Student.class).get(0);
-        }
+        Lesson lesson = LessonControllerTest.createEntity(em);
+        em.persist(lesson);
+        em.flush();
+
+        Student student = EntityCreatorUtil.createStudent();
+        em.persist(student);
+        em.flush();
+
         Course course = lesson.getCourse();
         course.addStudent(student);
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof Instructor instructor) {
+            course.addInstructor(instructor);
+        }
         em.persist(course);
         em.flush();
 
@@ -114,25 +114,33 @@ class SubmissionControllerTest {
 
         // Create submission
         Submission submission = createEntity(entityManager, 80.0);
-        SubmissionDTO submissionDTO = submissionMapper.toDto(submission);
+        SubmissionRequestDTO submissionRequestDTO = submissionMapper.toRequestDto(submission);
 
-        restSubmissionMockMvc.perform(post("/api/v1/submissions")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtil.convertObjectToJsonBytes(submissionDTO)))
+        MvcResult submissionMvcResult = restSubmissionMockMvc.perform(post("/api/v1/submissions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(TestUtil.convertObjectToJsonBytes(submissionRequestDTO)))
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.studentId", Matchers.is(submission.getStudent().getId().intValue())))
                 .andExpect(jsonPath("$.lessonId", Matchers.is(submission.getLesson().getId().intValue())))
-                .andExpect(jsonPath("$.grade", Matchers.is(80.0)));
+                .andExpect(jsonPath("$.grade", Matchers.is(80.0)))
+                .andReturn();
+
+        SubmissionResponseDTO submissionResponseDTO = JacksonUtil.deserialize(submissionMvcResult.getResponse().getContentAsString(),
+                new TypeReference<SubmissionResponseDTO>() {});
 
         // Validate new Submission in the database
-        List<Submission> submissionList = submissionRepository.findAll();
-        assertEquals(submissionList.size(), databaseSizeBeforeCreate + 1);
+        long databaseSizeAfterCreate = submissionRepository.count();
+        assertThat(databaseSizeAfterCreate).isEqualTo(databaseSizeBeforeCreate + 1);
 
-        Submission testSubmission = submissionList.get(submissionList.size() - 1);
-        assertThat(testSubmission.getStudent()).isEqualTo(submission.getStudent());
-        assertThat(testSubmission.getLesson()).isEqualTo(submission.getLesson());
-        assertThat(testSubmission.getGrade()).isEqualTo(submission.getGrade());
+        Optional<Submission> savedSubmissionOpt = submissionRepository.findById(
+                new Submission.SubmissionId(submissionResponseDTO.getStudentId(), submissionResponseDTO.getLessonId()));
+        assertThat(savedSubmissionOpt).isPresent();
+
+        Submission savedSubmission = savedSubmissionOpt.get();
+        assertThat(savedSubmission.getStudent()).isEqualTo(submission.getStudent());
+        assertThat(savedSubmission.getLesson()).isEqualTo(submission.getLesson());
+        assertThat(savedSubmission.getGrade()).isEqualTo(submission.getGrade());
     }
 
     @Test
@@ -147,7 +155,7 @@ class SubmissionControllerTest {
         Student student = submission.getStudent();
         GradeDTO gradeDTO = new GradeDTO(submission.getGrade());
 
-        restSubmissionMockMvc.perform(
+        MvcResult submissionMvcResult = restSubmissionMockMvc.perform(
                 post("/api/v1/lesson/" + lesson.getId() + "/student/" + student.getId() + "/submission")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(TestUtil.convertObjectToJsonBytes(gradeDTO)))
@@ -155,16 +163,24 @@ class SubmissionControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.studentId", Matchers.is(student.getId().intValue())))
                 .andExpect(jsonPath("$.lessonId", Matchers.is(lesson.getId().intValue())))
-                .andExpect(jsonPath("$.grade", Matchers.is(80.0)));
+                .andExpect(jsonPath("$.grade", Matchers.is(80.0)))
+                .andReturn();
+
+        SubmissionResponseDTO submissionResponseDTO = JacksonUtil.deserialize(submissionMvcResult.getResponse().getContentAsString(),
+                new TypeReference<SubmissionResponseDTO>() {});
 
         // Validate new Submission in the database
-        List<Submission> submissionList = submissionRepository.findAll();
-        assertEquals(submissionList.size(), databaseSizeBeforeCreate + 1);
+        long databaseSizeAfterCreate = submissionRepository.count();
+        assertThat(databaseSizeAfterCreate).isEqualTo(databaseSizeBeforeCreate + 1);
 
-        Submission testSubmission = submissionList.get(submissionList.size() - 1);
-        assertThat(testSubmission.getStudent()).isEqualTo(submission.getStudent());
-        assertThat(testSubmission.getLesson()).isEqualTo(submission.getLesson());
-        assertThat(testSubmission.getGrade()).isEqualTo(submission.getGrade());
+        Optional<Submission> savedSubmissionOpt = submissionRepository.findById(
+                new Submission.SubmissionId(submissionResponseDTO.getStudentId(), submissionResponseDTO.getLessonId()));
+        assertThat(savedSubmissionOpt).isPresent();
+
+        Submission savedSubmission = savedSubmissionOpt.get();
+        assertThat(savedSubmission.getStudent()).isEqualTo(submission.getStudent());
+        assertThat(savedSubmission.getLesson()).isEqualTo(submission.getLesson());
+        assertThat(savedSubmission.getGrade()).isEqualTo(submission.getGrade());
     }
 
     @Test
@@ -174,13 +190,12 @@ class SubmissionControllerTest {
 
         // Create submission
         Submission submission = createEntity(entityManager, 80.0);
-        submissionRepository.save(submission);
+        submission = submissionRepository.save(submission);
         Lesson lesson = submission.getLesson();
 
         restSubmissionMockMvc.perform(
                 get("/api/v1/lesson/" + lesson.getId() + "/submissions")
                         .contentType(MediaType.APPLICATION_JSON))
-                .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$", Matchers.hasSize(1)));
@@ -230,12 +245,13 @@ class SubmissionControllerTest {
     @Transactional
     @CustomMockAdmin
     void deleteByStudentAndLessonWithAdminRole() throws Exception {
-
         // Create submission
         Submission submission = createEntity(entityManager, 80.0);
         submissionRepository.save(submission);
         Student student = submission.getStudent();
         Lesson lesson = submission.getLesson();
+
+        long databaseSizeBeforeDelete = submissionRepository.count();
 
         restSubmissionMockMvc.perform(
                         delete("/api/v1/lesson/" + lesson.getId() + "/student/" + student.getId() + "/submission")
@@ -243,8 +259,8 @@ class SubmissionControllerTest {
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isNoContent());
 
-        List<Submission> submissions = submissionRepository.findAll();
-        assertThat(submissions).isEmpty();
+        long databaseSizeAfterDelete = submissionRepository.count();
+        assertThat(databaseSizeBeforeDelete - 1).isEqualTo(databaseSizeAfterDelete);
     }
 
     @Test
@@ -265,20 +281,20 @@ class SubmissionControllerTest {
     @Test
     @Transactional
     public void dtoEqualsVerifier() throws Exception {
-        TestUtil.equalsVerifier(SubmissionDTO.class);
-        SubmissionDTO submissionDTO1 = new SubmissionDTO();
-        submissionDTO1.setStudentId(1L);
-        submissionDTO1.setLessonId(1L);
-        SubmissionDTO submissionDTO2 = new SubmissionDTO();
-        assertThat(submissionDTO1).isNotEqualTo(submissionDTO2);
-        submissionDTO2.setStudentId(submissionDTO1.getStudentId());
-        submissionDTO2.setLessonId(submissionDTO1.getLessonId());
-        assertThat(submissionDTO1).isEqualTo(submissionDTO2);
-        submissionDTO2.setStudentId(2L);
-        submissionDTO2.setLessonId(2L);
-        assertThat(submissionDTO1).isNotEqualTo(submissionDTO2);
-        submissionDTO1.setStudentId(null);
-        submissionDTO1.setLessonId(null);
-        assertThat(submissionDTO1).isNotEqualTo(submissionDTO2);
+        TestUtil.equalsVerifier(SubmissionResponseDTO.class);
+        SubmissionResponseDTO submissionResponseDTO1 = new SubmissionResponseDTO();
+        submissionResponseDTO1.setStudentId(1L);
+        submissionResponseDTO1.setLessonId(1L);
+        SubmissionResponseDTO submissionResponseDTO2 = new SubmissionResponseDTO();
+        assertThat(submissionResponseDTO1).isNotEqualTo(submissionResponseDTO2);
+        submissionResponseDTO2.setStudentId(submissionResponseDTO1.getStudentId());
+        submissionResponseDTO2.setLessonId(submissionResponseDTO1.getLessonId());
+        assertThat(submissionResponseDTO1).isEqualTo(submissionResponseDTO2);
+        submissionResponseDTO2.setStudentId(2L);
+        submissionResponseDTO2.setLessonId(2L);
+        assertThat(submissionResponseDTO1).isNotEqualTo(submissionResponseDTO2);
+        submissionResponseDTO1.setStudentId(null);
+        submissionResponseDTO1.setLessonId(null);
+        assertThat(submissionResponseDTO1).isNotEqualTo(submissionResponseDTO2);
     }
 }

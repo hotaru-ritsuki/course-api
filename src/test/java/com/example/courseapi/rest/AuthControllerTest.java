@@ -1,14 +1,11 @@
 package com.example.courseapi.rest;
 
-import com.example.courseapi.config.MockMvcBuilder;
-import com.example.courseapi.config.annotation.CustomMockAdmin;
-import com.example.courseapi.config.annotation.CustomMockInstructor;
-import com.example.courseapi.config.annotation.CustomMockStudent;
+import com.example.courseapi.config.MockMvcBuilderTestConfiguration;
 import com.example.courseapi.config.annotation.DefaultTestConfiguration;
 import com.example.courseapi.domain.User;
 import com.example.courseapi.domain.enums.Roles;
-import com.example.courseapi.dto.UserRequestDTO;
-import com.example.courseapi.dto.UserResponseDTO;
+import com.example.courseapi.dto.response.UserResponseDTO;
+import com.example.courseapi.dto.request.UserRequestDTO;
 import com.example.courseapi.repository.UserRepository;
 import com.example.courseapi.security.controller.AuthController;
 import com.example.courseapi.security.dto.JWTRefreshDTO;
@@ -16,32 +13,22 @@ import com.example.courseapi.security.dto.JWTTokenDTO;
 import com.example.courseapi.security.dto.LoginRequestDTO;
 import com.example.courseapi.security.dto.SignUpRequestDTO;
 import com.example.courseapi.security.service.JwtService;
-import com.example.courseapi.service.mapper.UserRequestMapper;
 import com.example.courseapi.util.EntityCreatorUtil;
 import com.example.courseapi.util.JacksonUtil;
 import com.example.courseapi.util.TestUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.servlet.http.HttpServletRequest;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,16 +46,13 @@ class AuthControllerTest {
     private EntityManager entityManager;
 
     @Autowired
-    private MockMvcBuilder mockMvcBuilder;
+    private MockMvcBuilderTestConfiguration mockMvcBuilderTestConfiguration;
 
     @Autowired
     private AuthController authController;
 
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private UserRequestMapper userRequestMapper;
 
     @Autowired
     private JwtService jwtService;
@@ -85,7 +69,7 @@ class AuthControllerTest {
     @BeforeEach
     public void setup() {
         this.closable = MockitoAnnotations.openMocks(this);
-        this.restUserMockMvc = mockMvcBuilder.forControllers(authController);
+        this.restUserMockMvc = mockMvcBuilderTestConfiguration.forControllers(authController);
     }
 
     @Test

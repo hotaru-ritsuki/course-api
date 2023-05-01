@@ -1,11 +1,12 @@
 package com.example.courseapi.rest;
 
 import com.example.courseapi.config.EntityHeaderCreator;
+import com.example.courseapi.dto.request.SubmissionRequestDTO;
+import com.example.courseapi.dto.response.SubmissionResponseDTO;
 import com.example.courseapi.util.ResponseUtil;
 import com.example.courseapi.domain.Instructor;
 import com.example.courseapi.domain.User;
-import com.example.courseapi.dto.GradeDTO;
-import com.example.courseapi.dto.SubmissionDTO;
+import com.example.courseapi.dto.request.GradeDTO;
 import com.example.courseapi.security.annotation.CurrentUser;
 import com.example.courseapi.service.SubmissionService;
 import jakarta.validation.Valid;
@@ -25,6 +26,7 @@ import java.util.Optional;
  */
 @RestController
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 @RequestMapping(value = "/api/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 public class SubmissionController {
     private static final String ENTITY_NAME = "Submission";
@@ -35,20 +37,20 @@ public class SubmissionController {
     /**
      * {@code PUT  /submissions} : Updates an existing submission.
      *
-     * @param submissionDTO the submissionDTO to update.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated submissionDTO,
-     * or with status {@code 400 (Bad Request)} if the submissionDTO is not valid,
-     * or with status {@code 500 (Internal Server Error)} if the submissionDTO couldn't be updated.
+     * @param submissionRequestDTO the submissionResponseDTO to update.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated submissionResponseDTO,
+     * or with status {@code 400 (Bad Request)} if the submissionResponseDTO is not valid,
+     * or with status {@code 500 (Internal Server Error)} if the submissionResponseDTO couldn't be updated.
      */
-    @PreAuthorize("hasRole('INSTRUCTOR')")
+    @PreAuthorize("@accessValidator.submissionAccess(#submissionRequestDTO.lessonId)")
     @RequestMapping(value = "/submissions", method = {RequestMethod.POST, RequestMethod.PUT})
-    public ResponseEntity<SubmissionDTO> updateSubmission(
-            @Valid @RequestBody SubmissionDTO submissionDTO, @CurrentUser Instructor instructor) throws URISyntaxException {
-        SubmissionDTO result = submissionService.save(submissionDTO, instructor.getId());
+    public ResponseEntity<SubmissionResponseDTO> updateSubmission(
+            @Valid @RequestBody SubmissionRequestDTO submissionRequestDTO) throws URISyntaxException {
+        SubmissionResponseDTO submissionResponseDTO = submissionService.save(submissionRequestDTO);
         return ResponseEntity.created(
-                new URI("/api/lesson/" + result.getLessonId() + "/student/" + result.getStudentId() + "/submission" ))
-                .headers(entityHeaderCreator.createEntityUpdateAlert(ENTITY_NAME, submissionDTO.getEmbeddedIdsString()))
-                .body(result);
+                new URI("/api/lesson/" + submissionResponseDTO.getLessonId() + "/student/" + submissionResponseDTO.getStudentId() + "/submission" ))
+                .headers(entityHeaderCreator.createEntityUpdateAlert(ENTITY_NAME, submissionResponseDTO.getEmbeddedIdsString()))
+                .body(submissionResponseDTO);
     }
 
     /**
@@ -56,9 +58,9 @@ public class SubmissionController {
      *
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of submissions in body.
      */
-    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
+    @PreAuthorize("@accessValidator.submissionAccess(#lessonId)")
     @GetMapping("/lesson/{lessonId}/submissions")
-    public ResponseEntity<List<SubmissionDTO>> getAllSubmissionsForLesson(@PathVariable Long lessonId, @CurrentUser User currentUser) {
+    public ResponseEntity<List<SubmissionResponseDTO>> getAllSubmissionsForLesson(@PathVariable Long lessonId, @CurrentUser User currentUser) {
         return ResponseEntity.ok(submissionService.findAllByLesson(lessonId, currentUser.getId()));
     }
 
@@ -67,9 +69,8 @@ public class SubmissionController {
      *
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of submissions in body.
      */
-    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     @GetMapping("/student/{studentId}/submissions")
-    public ResponseEntity<List<SubmissionDTO>> getAllSubmissionsForStudent(@PathVariable Long studentId, @CurrentUser User currentUser) {
+    public ResponseEntity<List<SubmissionResponseDTO>> getAllSubmissionsForStudent(@PathVariable Long studentId, @CurrentUser User currentUser) {
         return ResponseEntity.ok(submissionService.findAllByStudent(studentId, currentUser.getId()));
     }
 
@@ -81,10 +82,10 @@ public class SubmissionController {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the submissionDTO,
      * or with status {@code 404 (Not Found)}.
      */
-    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
+    @PreAuthorize("@accessValidator.submissionAccess(#lessonId)")
     @GetMapping("/lesson/{lessonId}/student/{studentId}/submission")
-    public ResponseEntity<SubmissionDTO> getSubmission(@PathVariable Long lessonId, @PathVariable Long studentId) {
-        Optional<SubmissionDTO> submissionDTO = submissionService.findById(lessonId, studentId);
+    public ResponseEntity<SubmissionResponseDTO> getSubmission(@PathVariable Long lessonId, @PathVariable Long studentId) {
+        Optional<SubmissionResponseDTO> submissionDTO = submissionService.findById(lessonId, studentId);
         return ResponseUtil.wrapOrNotFound(submissionDTO);
     }
 
@@ -97,13 +98,13 @@ public class SubmissionController {
      *
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
-    @PreAuthorize("hasRole('INSTRUCTOR')")
+    @PreAuthorize("@accessValidator.submissionAccess(#lessonId)")
     @PostMapping("/lesson/{lessonId}/student/{studentId}/submission")
-    public ResponseEntity<SubmissionDTO> createSubmission(
+    public ResponseEntity<SubmissionResponseDTO> createSubmission(
             @PathVariable Long lessonId, @PathVariable Long studentId,
-            @Valid @RequestBody GradeDTO gradeDTO, @CurrentUser Instructor instructor
+            @Valid @RequestBody GradeDTO gradeDTO
     ) throws URISyntaxException {
-        SubmissionDTO result = submissionService.saveGrade(lessonId, studentId, gradeDTO.getGrade(), instructor.getId());
+        SubmissionResponseDTO result = submissionService.saveGrade(lessonId, studentId, gradeDTO.getGrade());
         return ResponseEntity.created(new URI("/api/submissions/" + result.getLessonId() + "/" + result.getStudentId()))
                 .headers(entityHeaderCreator.createEntityCreationAlert(ENTITY_NAME, result.getEmbeddedIdsString()))
                 .body(result);
@@ -116,7 +117,7 @@ public class SubmissionController {
      * @param studentId the student id of the submissionDTO to delete.
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
-    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
+    @PreAuthorize("@accessValidator.submissionAccess(#lessonId)")
     @DeleteMapping("/lesson/{lessonId}/student/{studentId}/submission")
     public ResponseEntity<Void> deleteSubmission(@PathVariable Long lessonId, @PathVariable Long studentId) {
         submissionService.delete(lessonId, studentId);

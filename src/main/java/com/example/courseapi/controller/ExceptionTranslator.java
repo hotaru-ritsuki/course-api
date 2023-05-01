@@ -1,6 +1,6 @@
 package com.example.courseapi.controller;
 
-import com.example.courseapi.dto.ApiExceptionDTO;
+import com.example.courseapi.exception.dto.ApiExceptionDTO;
 import com.example.courseapi.exception.SystemException;
 import com.example.courseapi.exception.code.ErrorCode;
 import lombok.extern.log4j.Log4j2;

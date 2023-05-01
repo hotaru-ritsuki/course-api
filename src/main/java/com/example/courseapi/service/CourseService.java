@@ -2,9 +2,12 @@ package com.example.courseapi.service;
 
 import com.example.courseapi.config.args.generic.Filters;
 import com.example.courseapi.domain.Course;
-import com.example.courseapi.dto.CourseDTO;
-import com.example.courseapi.dto.CourseGradeDTO;
-import com.example.courseapi.dto.CourseStatusDTO;
+import com.example.courseapi.domain.User;
+import com.example.courseapi.dto.*;
+import com.example.courseapi.dto.request.LessonsUpdateDTO;
+import com.example.courseapi.dto.response.CourseResponseDTO;
+import com.example.courseapi.dto.response.CourseStatusResponseDTO;
+import com.example.courseapi.dto.request.CourseRequestDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -23,7 +26,7 @@ public interface CourseService {
      * @param id the ID of the course to find
      * @return an optional containing the found course DTO, or empty if not found
      */
-    Optional<CourseDTO> findById(Long id);
+    Optional<CourseResponseDTO> findById(Long id);
 
     /**
      * Saves a new course or updates an existing one.
@@ -31,7 +34,7 @@ public interface CourseService {
      * @param courseDTO the course DTO to save or update
      * @return the saved or updated course DTO
      */
-    CourseDTO save(CourseDTO courseDTO);
+    CourseResponseDTO save(CourseRequestDTO courseDTO);
 
     /**
      * Finds all courses with optional filters and pagination.
@@ -40,7 +43,7 @@ public interface CourseService {
      * @param pageable the pagination information to apply when retrieving the courses
      * @return a page containing the found course DTOs
      */
-    Page<CourseDTO> findAll(Filters filters, Pageable pageable);
+    Page<CourseResponseDTO> findAll(Filters filters, Pageable pageable, User user);
 
     /**
      * Finds all courses associated with a specific student ID.
@@ -48,7 +51,7 @@ public interface CourseService {
      * @param studentId the ID of the student to find courses for
      * @return a list containing the found course DTOs
      */
-    List<CourseDTO> findByStudentId(Long studentId);
+    List<CourseResponseDTO> findByStudentId(Long studentId);
 
     /**
      * Deletes a course with the given ID.
@@ -72,7 +75,7 @@ public interface CourseService {
      * @param studentId the ID of the student to retrieve the status for
      * @return the course status DTO for the given course and student
      */
-    CourseStatusDTO getCourseStatus(Long courseId, Long studentId);
+    CourseStatusResponseDTO getCourseStatus(Long courseId, Long studentId);
 
     /**
      * Calculates the course grade for a student in a specific course.
@@ -107,21 +110,25 @@ public interface CourseService {
      * @param userId the ID of the user to retrieve courses for
      * @return a set of course DTOs associated with the given user ID
      */
-    Set<? extends CourseDTO> getMyCourses(Long userId);
+    Set<? extends CourseResponseDTO> getMyCourses(Long userId);
 
     /**
      * Adds an instructor with the given ID to the course with the given ID.
      *
      * @param courseId     the ID of the course.
      * @param instructorId the ID of the instructor to be added.
+     * @return
      */
-    void addInstructorToCourse(Long courseId, Long instructorId);
+    CourseResponseDTO addInstructorToCourse(Long courseId, Long instructorId);
 
     /**
      * Deletes an instructor with the given ID from the course with the given ID.
      *
      * @param courseId     the ID of the course.
      * @param instructorId the ID of the instructor to be deleted.
+     * @return
      */
-    void deleteInstructorForCourse(Long courseId, Long instructorId);
+    CourseResponseDTO deleteInstructorForCourse(Long courseId, Long instructorId);
+
+    CourseResponseDTO updateCourseLessons(Long courseId, LessonsUpdateDTO lessonsDTO);
 }

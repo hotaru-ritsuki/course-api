@@ -16,4 +16,11 @@ public interface CourseRepository extends JpaRepository<Course, Long>, JpaSpecif
     List<Course> findByDescriptionContaining(String description);
 
     boolean existsByIdAndStudentsId(Long courseId, Long studentId);
+
+    boolean existsByIdAndInstructorsId(Long courseId, Long studentId);
+
+    boolean existsByLessonsIdAndStudentsId(Long lessonId, Long studentId);
+
+
+    boolean existsByLessonsIdAndInstructorsId(Long lessonId, Long studentId);
 }

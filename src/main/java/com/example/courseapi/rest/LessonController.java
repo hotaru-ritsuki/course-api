@@ -2,8 +2,11 @@ package com.example.courseapi.rest;
 
 import com.example.courseapi.config.EntityHeaderCreator;
 import com.example.courseapi.config.args.generic.Filters;
+import com.example.courseapi.domain.User;
+import com.example.courseapi.dto.request.LessonRequestDTO;
+import com.example.courseapi.dto.response.LessonResponseDTO;
+import com.example.courseapi.security.annotation.CurrentUser;
 import com.example.courseapi.util.ResponseUtil;
-import com.example.courseapi.dto.LessonDTO;
 import com.example.courseapi.exception.SystemException;
 import com.example.courseapi.exception.code.ErrorCode;
 import com.example.courseapi.service.LessonService;
@@ -12,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -25,6 +29,7 @@ import java.util.Optional;
  */
 @RestController
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 @RequestMapping(value = "/api/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 public class LessonController {
     private static final String ENTITY_NAME = "Lesson";
@@ -35,18 +40,19 @@ public class LessonController {
     /**
      * {@code POST /lessons} : Create a new lesson.
      *
-     * @param lessonDTO the lesson to create.
-     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new lessonDTO,
+     * @param lessonRequestDTO the lesson to create.
+     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new lessonResponseDTO,
      * or with status {@code 400 (Bad Request)} if the lesson has already an ID.
      *
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
+    @PreAuthorize("@accessValidator.lessonAccess(#lessonRequestDTO.courseId)")
     @PostMapping("/lessons")
-    public ResponseEntity<LessonDTO> createLesson(@Valid @RequestBody LessonDTO lessonDTO) throws URISyntaxException {
-        if (lessonDTO.getId() != null) {
+    public ResponseEntity<LessonResponseDTO> createLesson(@Valid @RequestBody LessonRequestDTO lessonRequestDTO) throws URISyntaxException {
+        if (lessonRequestDTO.getId() != null) {
             throw new SystemException("A new lesson cannot already have an ID", ErrorCode.BAD_REQUEST);
         }
-        LessonDTO result = lessonService.save(lessonDTO);
+        LessonResponseDTO result = lessonService.save(lessonRequestDTO);
         return ResponseEntity.created(new URI("/api/lessons/" + result.getId()))
                 .headers(entityHeaderCreator.createEntityCreationAlert(ENTITY_NAME, result.getId().toString()))
                 .body(result);
@@ -55,19 +61,20 @@ public class LessonController {
     /**
      * {@code PUT  /lessons} : Updates an existing lesson.
      *
-     * @param lessonDTO the lessonDTO to update.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated lessonDTO,
-     * or with status {@code 400 (Bad Request)} if the lessonDTO is not valid,
-     * or with status {@code 500 (Internal Server Error)} if the lessonDTO couldn't be updated.
+     * @param lessonRequestDTO the lessonResponseDTO to update.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated lessonResponseDTO,
+     * or with status {@code 400 (Bad Request)} if the lessonResponseDTO is not valid,
+     * or with status {@code 500 (Internal Server Error)} if the lessonResponseDTO couldn't be updated.
      */
+    @PreAuthorize("@accessValidator.lessonAccess(#lessonRequestDTO.courseId)")
     @PutMapping("/lessons")
-    public ResponseEntity<LessonDTO> updateLesson(@Valid @RequestBody LessonDTO lessonDTO) {
-        if (lessonDTO.getId() == null) {
+    public ResponseEntity<LessonResponseDTO> updateLesson(@Valid @RequestBody LessonRequestDTO lessonRequestDTO) {
+        if (lessonRequestDTO.getId() == null) {
             throw new SystemException("Invalid id", ErrorCode.BAD_REQUEST);
         }
-        LessonDTO result = lessonService.save(lessonDTO);
+        LessonResponseDTO result = lessonService.save(lessonRequestDTO);
         return ResponseEntity.ok()
-                .headers(entityHeaderCreator.createEntityUpdateAlert(ENTITY_NAME, lessonDTO.getId().toString()))
+                .headers(entityHeaderCreator.createEntityUpdateAlert(ENTITY_NAME, lessonRequestDTO.getId().toString()))
                 .body(result);
     }
 
@@ -77,7 +84,7 @@ public class LessonController {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of lessons in body.
      */
     @GetMapping("/lessons")
-    public Page<LessonDTO> getAllLessons(Filters filters, Pageable pageable) {
+    public Page<LessonResponseDTO> getAllLessons(Filters filters, Pageable pageable) {
         return lessonService.findAll(filters, pageable);
     }
 
@@ -89,8 +96,8 @@ public class LessonController {
      * or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/lessons/{id}")
-    public ResponseEntity<LessonDTO> getLesson(@PathVariable Long id) {
-        Optional<LessonDTO> lessonDTO = lessonService.findById(id);
+    public ResponseEntity<LessonResponseDTO> getLesson(@PathVariable Long id) {
+        Optional<LessonResponseDTO> lessonDTO = lessonService.findById(id);
         return ResponseUtil.wrapOrNotFound(lessonDTO);
     }
 
@@ -100,6 +107,7 @@ public class LessonController {
      * @param id the id of the lessonDTO to delete.
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/lessons/{id}")
     public ResponseEntity<Void> deleteLesson(@PathVariable Long id) {
         lessonService.delete(id);
@@ -115,9 +123,9 @@ public class LessonController {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the lessonDTO,
      * or with status {@code 404 (Not Found)}.
      */
-    @GetMapping("/lessons/courses/{courseId}")
-    public ResponseEntity<List<LessonDTO>> getLessonsForCourse(@PathVariable Long courseId) {
-        List<LessonDTO> lessonDTOs = lessonService.findByCourseId(courseId);
-        return ResponseEntity.ok(lessonDTOs);
+    @GetMapping("/courses/{courseId}/lessons")
+    public ResponseEntity<List<LessonResponseDTO>> getLessonsForCourse(@PathVariable Long courseId) {
+        List<LessonResponseDTO> lessonResponseDTOS = lessonService.findByCourseId(courseId);
+        return ResponseEntity.ok(lessonResponseDTOS);
     }
 }

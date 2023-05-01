@@ -1,7 +1,8 @@
 package com.example.courseapi.security.config;
 
 
-import com.example.courseapi.exception.UserNotFoundException;
+import com.example.courseapi.exception.SystemException;
+import com.example.courseapi.exception.code.ErrorCode;
 import com.example.courseapi.repository.UserRepository;
 import com.example.courseapi.security.filters.JwtAuthenticationFilter;
 import com.example.courseapi.security.service.JwtService;
@@ -72,7 +73,7 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authenticationProvider(authenticationProvider)
-                .addFilterBefore(new JwtAuthenticationFilter(jwtService, userDetailsService), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtAuthenticationFilter(jwtService, userDetailsService, userRepository), UsernamePasswordAuthenticationFilter.class);
         log.debug("SecurityFilterChain successfully created with authentication provider {} and user details service {}",
                 authenticationProvider.getClass().getSimpleName(), userDetailsService.getClass().getSimpleName());
         return http.build();
@@ -129,6 +130,7 @@ public class SecurityConfig {
      */
     @Bean
     public UserDetailsService userDetailsService() {
-        return email -> userRepository.findByEmail(email).orElseThrow(UserNotFoundException::new);
+        return email -> userRepository.findByEmail(email).orElseThrow(() ->
+                new SystemException("User with email: " + email + " not found.", ErrorCode.UNAUTHORIZED));
     }
 }

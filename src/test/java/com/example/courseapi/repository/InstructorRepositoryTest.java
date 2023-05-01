@@ -1,6 +1,6 @@
 package com.example.courseapi.repository;
 
-import com.example.courseapi.config.DefaultJPARepositoryTestConfiguration;
+import com.example.courseapi.config.annotation.DefaultJPARepositoryTestConfiguration;
 import com.example.courseapi.domain.Instructor;
 import com.example.courseapi.domain.enums.Roles;
 import com.example.courseapi.util.EntityCreatorUtil;
@@ -11,10 +11,8 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

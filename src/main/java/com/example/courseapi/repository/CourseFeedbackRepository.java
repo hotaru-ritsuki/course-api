@@ -14,4 +14,6 @@ public interface CourseFeedbackRepository extends JpaRepository<CourseFeedback, 
     List<CourseFeedback> findByCourseId(Long courseId);
 
     List<CourseFeedback> findByFeedbackContaining(String text);
+
+    boolean existsByIdAndStudentId(Long courseFeedbackId, Long studentId);
 }

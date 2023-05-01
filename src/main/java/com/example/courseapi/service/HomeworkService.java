@@ -1,7 +1,9 @@
 package com.example.courseapi.service;
 
 import com.example.courseapi.config.args.generic.Filters;
-import com.example.courseapi.dto.HomeworkDTO;
+import com.example.courseapi.domain.User;
+import com.example.courseapi.dto.request.HomeworkRequestDTO;
+import com.example.courseapi.dto.response.HomeworkResponseDTO;
 import com.example.courseapi.domain.Homework;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,10 +20,10 @@ public interface HomeworkService {
     /**
      * Save a homework.
      *
-     * @param homeworkDTO the entity to save.
+     * @param homeworkRequestDTO the entity to save.
      * @return the persisted entity.
      */
-    HomeworkDTO save(HomeworkDTO homeworkDTO);
+    HomeworkResponseDTO save(HomeworkRequestDTO homeworkRequestDTO);
 
     /**
      * Find all homework entities.
@@ -30,7 +32,7 @@ public interface HomeworkService {
      * @param pageable the pagination information to apply when retrieving the courses
      * @return the list of entities.
      */
-    Page<HomeworkDTO> findAll(Filters filters, Pageable pageable);
+    Page<HomeworkResponseDTO> findAll(Filters filters, Pageable pageable, User user);
 
     /**
      * Find a homework entity by ID.
@@ -38,7 +40,7 @@ public interface HomeworkService {
      * @param homeworkId the ID of the homework to find.
      * @return the optional entity.
      */
-    Optional<HomeworkDTO> findById(Long homeworkId);
+    Optional<HomeworkResponseDTO> findById(Long homeworkId);
 
     /**
      * Delete a homework entity by ID.
@@ -53,7 +55,7 @@ public interface HomeworkService {
      * @param studentId the ID of the student.
      * @return the list of entities.
      */
-    List<HomeworkDTO> findByStudent(Long studentId);
+    List<HomeworkResponseDTO> findByStudent(Long studentId);
 
     /**
      * Find all homework entities for a lesson with the given ID.
@@ -61,7 +63,7 @@ public interface HomeworkService {
      * @param lessonId the ID of the lesson.
      * @return the list of entities.
      */
-    List<HomeworkDTO> findByLessonId(Long lessonId);
+    List<HomeworkResponseDTO> findByLessonId(Long lessonId);
 
     /**
      * Upload a homework file for a lesson and a student.
@@ -71,7 +73,7 @@ public interface HomeworkService {
      * @param studentId the ID of the student.
      * @return the DTO of the uploaded homework.
      */
-    HomeworkDTO uploadHomeworkForLesson(Long lessonId, MultipartFile file, Long studentId);
+    HomeworkResponseDTO uploadHomeworkForLesson(Long lessonId, MultipartFile file, Long studentId);
 
     /**
      * Find all homework entities submitted by a student with the given ID and for a course with the given ID.

@@ -2,7 +2,9 @@ package com.example.courseapi.service;
 
 import com.example.courseapi.config.args.generic.Filters;
 import com.example.courseapi.domain.Lesson;
-import com.example.courseapi.dto.LessonDTO;
+import com.example.courseapi.domain.User;
+import com.example.courseapi.dto.request.LessonRequestDTO;
+import com.example.courseapi.dto.response.LessonResponseDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -15,42 +17,42 @@ import java.util.Optional;
 public interface LessonService {
 
     /**
-     * Finds a {@link LessonDTO} by ID.
+     * Finds a {@link LessonResponseDTO} by ID.
      *
-     * @param id the ID of the {@link LessonDTO} to find.
-     * @return an {@link Optional} with the {@link LessonDTO}, or empty if not found.
+     * @param id the ID of the {@link LessonResponseDTO} to find.
+     * @return an {@link Optional} with the {@link LessonResponseDTO}, or empty if not found.
      */
-    Optional<LessonDTO> findById(Long id);
+    Optional<LessonResponseDTO> findById(Long id);
 
     /**
-     * Saves a {@link LessonDTO}.
+     * Saves a {@link LessonRequestDTO}.
      *
-     * @param lessonDTO the {@link LessonDTO} to save.
-     * @return the saved {@link LessonDTO}.
+     * @param lessonRequestDTO the {@link LessonRequestDTO} to save.
+     * @return the saved {@link LessonResponseDTO}.
      */
-    LessonDTO save(LessonDTO lessonDTO);
+    LessonResponseDTO save(LessonRequestDTO lessonRequestDTO);
 
     /**
-     * Finds all {@link LessonDTO} objects that match the given filters and pageable.
+     * Finds all {@link LessonResponseDTO} objects that match the given filters and pageable.
      *
      * @param filters  the optional filters to apply when searching for courses
      * @param pageable the pagination information to apply when retrieving the courses
-     * @return a {@link Page} with the {@link LessonDTO} objects found.
+     * @return a {@link Page} with the {@link LessonResponseDTO} objects found.
      */
-    Page<LessonDTO> findAll(Filters filters, Pageable pageable);
+    Page<LessonResponseDTO> findAll(Filters filters, Pageable pageable);
 
     /**
-     * Finds all {@link LessonDTO} objects associated with a specific course.
+     * Finds all {@link LessonResponseDTO} objects associated with a specific course.
      *
      * @param courseId the ID of the course.
-     * @return a list with the {@link LessonDTO} objects associated with the course.
+     * @return a list with the {@link LessonResponseDTO} objects associated with the course.
      */
-    List<LessonDTO> findByCourseId(Long courseId);
+    List<LessonResponseDTO> findByCourseId(Long courseId);
 
     /**
-     * Deletes a {@link LessonDTO} by ID.
+     * Deletes a {@link LessonResponseDTO} by ID.
      *
-     * @param lessonId the ID of the {@link LessonDTO} to delete.
+     * @param lessonId the ID of the {@link LessonResponseDTO} to delete.
      */
     void delete(Long lessonId);
 }
