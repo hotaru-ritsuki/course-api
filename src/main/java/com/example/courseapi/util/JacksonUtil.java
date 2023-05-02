@@ -23,12 +23,19 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * Utility class to help serialize/deserialize objects
+ * Utility class for serialization and deserialization of JSON objects.
  */
 @Log4j2
-public class JacksonUtil {
+public final class JacksonUtil {
+
+    /**
+     * Constant for the filter name used when filtering properties of JSON objects.
+     */
     public static final String JSON_PROPERTIES_FILTER = "propertyFilter";
 
+    /**
+     * Object mapper instance configured to handle date/time values
+     */
     public static final ObjectMapper objectMapperWithTimestampDateFormat;
 
     static {
@@ -44,6 +51,15 @@ public class JacksonUtil {
         throw new IllegalStateException("Can not create instance of utility class");
     }
 
+    /**
+     * Deserialize a JSON string into an object of a given class.
+     *
+     * @param json  the JSON string to deserialize.
+     * @param clazz the class to deserialize into.
+     * @param <T>   the type of the object to deserialize into.
+     * @return the deserialized object.
+     * @throws SystemException if an error occurs during deserialization.
+     */
     public static <T> T deserialize(final String json, final Class<T> clazz) {
         if (json == null) {
             return null;
@@ -55,6 +71,15 @@ public class JacksonUtil {
         }
     }
 
+    /**
+     * Deserialize a JSON string into an object of a given type.
+     *
+     * @param json the JSON string to deserialize.
+     * @param type the type of object to deserialize into.
+     * @param <T>  the type of the object to deserialize into.
+     * @return the deserialized object.
+     * @throws SystemException if an error occurs during deserialization.
+     */
     public static <T> T deserialize(final String json, final TypeReference<T> type) {
         if (json == null) {
             return null;
@@ -66,10 +91,13 @@ public class JacksonUtil {
         }
     }
 
-    public String wrapper(final Object o){
-        return serialize(o);
-    }
-
+    /**
+     * Serialize an object to a JSON string.
+     *
+     * @param object the object to serialize.
+     * @return the JSON string representing the object.
+     * @throws SystemException if an error occurs during serialization.
+     */
     public static String serialize(final Object object) {
         if (object == null) {
             return null;
@@ -82,6 +110,13 @@ public class JacksonUtil {
         }
     }
 
+    /**
+     * Check if a class has all the fields specified by an array of field names.
+     *
+     * @param target the class to check.
+     * @param fields an array of field names to check for.
+     * @throws SystemException if one or more of the fields are missing from the class.
+     */
     public static void hasAllFields(Class<?> target, String[] fields) {
         if (fields == null || fields.length == 0) return;
         List<String> missingFields = new ArrayList<>();
@@ -93,14 +128,32 @@ public class JacksonUtil {
 
         if (missingFields.size() != 0) {
             String errorFields = missingFields.stream().collect(Collectors.joining(",", "[", "]"));
-            throw new SystemException("Following fields don't exist: "+ errorFields, ErrorCode.BAD_REQUEST);
+            throw new SystemException("Following fields don't exist: " + errorFields, ErrorCode.BAD_REQUEST);
         }
     }
 
+    /**
+     * Filters out properties of an object and returns a MappingJacksonValue containing only the specified properties.
+     * Uses the default filter target which is the class of the object being filtered.
+     *
+     * @param toFilter   the object to be filtered
+     * @param properties the array of properties to be included in the filtered output
+     * @return a MappingJacksonValue containing only the specified properties
+     * @throws SystemException if any of the specified properties do not exist in the filter target
+     */
     public static MappingJacksonValue filterProperties(final Object toFilter, final String[] properties) {
         return filterProperties(toFilter, properties, toFilter.getClass());
     }
 
+    /**
+     * Filters out properties of an object and returns a MappingJacksonValue containing only the specified properties.
+     *
+     * @param toFilter     the object to be filtered
+     * @param properties   the array of properties to be included in the filtered output
+     * @param filterTarget the class whose fields will be used to filter the object properties
+     * @return a MappingJacksonValue containing only the specified properties
+     * @throws SystemException if any of the specified properties do not exist in the filter target
+     */
     public static MappingJacksonValue filterProperties(final Object toFilter, final String[] properties, Class<?> filterTarget) {
         hasAllFields(filterTarget, properties);
         final MappingJacksonValue jacksonValue = new MappingJacksonValue(toFilter);

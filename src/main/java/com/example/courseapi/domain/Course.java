@@ -9,6 +9,7 @@ import lombok.experimental.SuperBuilder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.io.Serial;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -25,6 +26,9 @@ import java.util.Set;
 @AllArgsConstructor
 @SuperBuilder
 public class Course extends BaseEntity {
+    @Serial
+    private static final long serialVersionUID = 7625188377736897997L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -74,8 +78,9 @@ public class Course extends BaseEntity {
 
     @PrePersist
     @PreUpdate
-    private void validateCourse() {
-        this.available = CollectionUtils.sizeIsEmpty(this.instructors)
+    @PostLoad
+    private void validateAvailability() {
+        this.available = !CollectionUtils.sizeIsEmpty(this.instructors)
                 && CollectionUtils.size(this.lessons) >= 5;
     }
 
@@ -89,11 +94,13 @@ public class Course extends BaseEntity {
     public void addLesson(Lesson lesson) {
         this.lessons.add(lesson);
         lesson.setCourse(this);
+        this.validateAvailability();
     }
 
     public void removeLesson(Lesson lesson) {
         this.lessons.remove(lesson);
         lesson.setCourse(null);
+        this.validateAvailability();
     }
 
     public void addStudent(Student student) {
@@ -109,10 +116,12 @@ public class Course extends BaseEntity {
     public void addInstructor(Instructor instructor) {
         this.instructors.add(instructor);
         instructor.getInstructorCourses().add(this);
+        this.validateAvailability();
     }
 
     public void removeInstructor(Instructor instructor) {
         this.instructors.remove(instructor);
         instructor.getInstructorCourses().remove(this);
+        this.validateAvailability();
     }
 }

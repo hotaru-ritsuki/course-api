@@ -32,7 +32,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -120,7 +119,8 @@ class CourseFeedbackControllerTest {
                 .andReturn();
 
         CourseFeedbackResponseDTO courseFeedbackResponseDTO = JacksonUtil.deserialize(courseFeedbackMvcresult.getResponse().getContentAsString(),
-                new TypeReference<CourseFeedbackResponseDTO>() {});
+                new TypeReference<>() {
+                });
 
         // Validate new CourseFeedback in the database
         long databaseSizeAfterCreate = courseFeedbackRepository.count();

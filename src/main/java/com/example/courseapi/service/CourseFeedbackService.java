@@ -22,7 +22,7 @@ public interface CourseFeedbackService {
      * @param id the ID of the course feedback entry to find
      * @return an optional containing the found course feedback DTO, or empty if not found
      */
-    Optional<CourseFeedbackResponseDTO> findById(Long id);
+    Optional<CourseFeedbackResponseDTO> findById(final Long id);
 
     /**
      * Saves a new course feedback entry or updates an existing one.
@@ -30,7 +30,7 @@ public interface CourseFeedbackService {
      * @param courseDTO the course feedback DTO to save or update
      * @return the saved or updated course feedback DTO
      */
-    CourseFeedbackResponseDTO save(CourseFeedbackRequestDTO courseDTO, Student student);
+    CourseFeedbackResponseDTO save(final CourseFeedbackRequestDTO courseDTO, final Student student);
 
     /**
      * Finds all course feedback entries with optional filters and pagination.
@@ -39,7 +39,7 @@ public interface CourseFeedbackService {
      * @param pageable the pagination information to apply when retrieving the course feedback entries
      * @return a page containing the found course feedback DTOs
      */
-    Page<CourseFeedbackResponseDTO> findAll(Filters filters, Pageable pageable);
+    Page<CourseFeedbackResponseDTO> findAll(final Filters filters, final Pageable pageable);
 
     /**
      * Finds all course feedback entries associated with a specific student ID.
@@ -47,7 +47,7 @@ public interface CourseFeedbackService {
      * @param studentId the ID of the student to find course feedback entries for
      * @return a list containing the found course feedback DTOs
      */
-    List<CourseFeedbackResponseDTO> findByStudentId(Long studentId);
+    List<CourseFeedbackResponseDTO> findByStudentId(final Long studentId);
 
     /**
      * Finds all course feedback entries associated with a specific course ID.
@@ -55,12 +55,12 @@ public interface CourseFeedbackService {
      * @param courseId the ID of the course to find course feedback entries for
      * @return a list containing the found course feedback DTOs
      */
-    List<CourseFeedbackResponseDTO> findByCourseId(Long courseId);
+    List<CourseFeedbackResponseDTO> findByCourseId(final Long courseId);
 
     /**
      * Deletes a course feedback entry with the given ID.
      *
      * @param courseId the ID of the course feedback entry to delete
      */
-    void delete(Long courseId);
+    void delete(final Long courseId);
 }

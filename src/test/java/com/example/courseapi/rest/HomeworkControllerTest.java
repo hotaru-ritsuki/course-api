@@ -31,7 +31,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -306,7 +305,8 @@ class HomeworkControllerTest {
                 .andReturn();
 
         HomeworkResponseDTO homeworkResponseDTO = JacksonUtil.deserialize(homeworkMvcResult.getResponse().getContentAsString(),
-                new TypeReference<HomeworkResponseDTO>() {});
+                new TypeReference<>() {
+                });
 
         // Validate the Homework in the database
         long databaseSizeAfterUpdate = homeworkRepository.count();

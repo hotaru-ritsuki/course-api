@@ -10,6 +10,8 @@ import jakarta.validation.constraints.Size;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.io.Serial;
+
 /**
  * Entity class for Homework
  */
@@ -21,6 +23,9 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Homework extends BaseEntity {
+    @Serial
+    private static final long serialVersionUID = 6185408748195021147L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

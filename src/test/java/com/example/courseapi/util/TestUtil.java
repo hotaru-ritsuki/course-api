@@ -55,7 +55,7 @@ public final class TestUtil {
     }
 
     /**
-     * Makes a executes a query to the EntityManager finding stored object for given entity class.
+     * Makes an executes a query to the EntityManager finding stored object for given entity class.
      *
      * @param <T>  The type of objects to be searched
      * @param em   The instance of the EntityManager

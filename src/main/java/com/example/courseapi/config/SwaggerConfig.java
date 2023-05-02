@@ -11,6 +11,9 @@ import io.swagger.v3.oas.annotations.servers.Server;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Swagger OpenAPI Configuration
+ */
 @Configuration
 @RequiredArgsConstructor
 @OpenAPIDefinition(

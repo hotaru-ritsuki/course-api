@@ -19,7 +19,7 @@ public interface SubmissionMapper extends EntityMapper<SubmissionRequestDTO, Sub
             @Mapping(source = "student.id", target = "studentId"),
             @Mapping(source = "lesson.id", target = "lessonId"),
     })
-    SubmissionResponseDTO toResponseDto(Submission submission);
+    SubmissionResponseDTO toResponseDto(final Submission submission);
 
     @Mappings({
             @Mapping(source = "studentId", target = "student.id"),
@@ -27,13 +27,13 @@ public interface SubmissionMapper extends EntityMapper<SubmissionRequestDTO, Sub
             @Mapping(source = "lessonId", target = "lesson.id"),
             @Mapping(source = "lessonId", target = "submissionId.lessonId"),
     })
-    Submission fromResponseDto(SubmissionResponseDTO submissionResponseDTO);
+    Submission fromResponseDto(final SubmissionResponseDTO submissionResponseDTO);
 
     @Mappings({
             @Mapping(source = "student.id", target = "studentId"),
             @Mapping(source = "lesson.id", target = "lessonId"),
     })
-    SubmissionRequestDTO toRequestDto(Submission submission);
+    SubmissionRequestDTO toRequestDto(final Submission submission);
 
     @Mappings({
             @Mapping(source = "studentId", target = "student.id"),
@@ -41,6 +41,6 @@ public interface SubmissionMapper extends EntityMapper<SubmissionRequestDTO, Sub
             @Mapping(source = "lessonId", target = "lesson.id"),
             @Mapping(source = "lessonId", target = "submissionId.lessonId"),
     })
-    Submission fromRequestDto(SubmissionRequestDTO submissionRequestDTO);
+    Submission fromRequestDto(final SubmissionRequestDTO submissionRequestDTO);
 }
 

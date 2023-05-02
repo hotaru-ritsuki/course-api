@@ -14,6 +14,7 @@ import org.hibernate.annotations.DiscriminatorOptions;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -33,6 +34,9 @@ import java.util.Collections;
 @AllArgsConstructor
 @SuperBuilder
 public class User extends BaseEntity implements UserDetails {
+    @Serial
+    private static final long serialVersionUID = -6587266125697941080L;
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

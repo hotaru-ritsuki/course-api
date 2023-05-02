@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.io.Serial;
+
 /**
  * Entity class for Course Feedback
  */
@@ -23,6 +25,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CourseFeedback extends BaseEntity {
+    @Serial
+    private static final long serialVersionUID = 5112233557374542108L;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

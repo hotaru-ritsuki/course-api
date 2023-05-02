@@ -22,10 +22,10 @@ import java.util.stream.Collectors;
 public interface InstructorMapper extends EntityMapper<UserRequestDTO, InstructorResponseDTO, Instructor> {
 
     @Mapping(source = "instructorCourses", target = "instructorCourseIds", qualifiedByName = "coursesToIds")
-    InstructorResponseDTO toResponseDto(Instructor instructor);
+    InstructorResponseDTO toResponseDto(final Instructor instructor);
 
     @Named("coursesToIds")
-    static Set<Long> coursesToIds(Set<Course> instructorCourses) {
+    static Set<Long> coursesToIds(final Set<Course> instructorCourses) {
         if (Objects.isNull(instructorCourses)) {
             return Collections.emptySet();
         }

@@ -9,9 +9,8 @@ import java.util.List;
 
 @Repository
 public interface HomeworkRepository extends JpaRepository<Homework, Long>, JpaSpecificationExecutor<Homework> {
-    List<Homework> findByLessonId(Long lessonId);
-    List<Homework> findByStudentId(Long studentId);
-    List<Homework> findByTitleContaining(String text);
-
-    List<Homework> findByStudentIdAndLessonId(Long studentId, Long lessonId);
+    List<Homework> findByLessonId(final Long lessonId);
+    List<Homework> findByStudentId(final Long studentId);
+    List<Homework> findByTitleContaining(final String text);
+    List<Homework> findByStudentIdAndLessonId(final Long studentId, final Long lessonId);
 }

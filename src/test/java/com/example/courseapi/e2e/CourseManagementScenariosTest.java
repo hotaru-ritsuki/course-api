@@ -3,14 +3,10 @@ package com.example.courseapi.e2e;
 import com.example.courseapi.config.MockMvcBuilderTestConfiguration;
 import com.example.courseapi.config.annotation.DefaultTestConfiguration;
 import com.example.courseapi.domain.*;
+import com.example.courseapi.domain.enums.CourseStatus;
 import com.example.courseapi.domain.enums.Roles;
-import com.example.courseapi.dto.request.CourseRequestDTO;
-import com.example.courseapi.dto.request.LessonRequestDTO;
-import com.example.courseapi.dto.request.LessonsUpdateDTO;
-import com.example.courseapi.dto.request.RoleRequestDTO;
-import com.example.courseapi.dto.response.CourseResponseDTO;
-import com.example.courseapi.dto.response.LessonResponseDTO;
-import com.example.courseapi.dto.response.UserResponseDTO;
+import com.example.courseapi.dto.request.*;
+import com.example.courseapi.dto.response.*;
 import com.example.courseapi.rest.*;
 import com.example.courseapi.security.config.SecurityConfig;
 import com.example.courseapi.security.controller.AuthController;
@@ -21,9 +17,12 @@ import com.example.courseapi.security.dto.SignUpRequestDTO;
 import com.example.courseapi.service.mapper.LessonMapper;
 import com.example.courseapi.util.EntityCreatorUtil;
 import com.example.courseapi.util.JacksonUtil;
+import com.example.courseapi.util.ResponsePage;
 import com.example.courseapi.util.TestUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.collect.Iterables;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +30,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -38,6 +38,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.HashSet;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,7 +54,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DefaultTestConfiguration
 @SpringBootTest
 @Import(SecurityConfig.class)
-class CourseManagementScenariosTest {
+class  CourseManagementScenariosTest {
 
     @Autowired
     private MockMvcBuilderTestConfiguration mockMvcBuilderTestConfiguration;
@@ -166,15 +167,21 @@ class CourseManagementScenariosTest {
         Admin admin = EntityCreatorUtil.predefinedAdmin();
         JWTTokenDTO jwtAdminDTO = loginUserStep(admin);
 
-        // Student
-        Student student = EntityCreatorUtil.createStudent(RandomStringUtils.randomAlphabetic(10));
-        signUpUserStep(student);
-
-        JWTTokenDTO jwtStudentDTO = loginUserStep(student);
-        UserResponseDTO studentResponseDTO = attemptAuthenticatedRequestStep(student, jwtStudentDTO);
-
+        // Student 1
+        Student student1 = EntityCreatorUtil.createStudent(RandomStringUtils.randomAlphabetic(10));
+        signUpUserStep(student1);
+        JWTTokenDTO jwtStudent1DTO = loginUserStep(student1);
+        UserResponseDTO student1ResponseDTO = attemptAuthenticatedRequestStep(student1, jwtStudent1DTO);
         // Assign STUDENT role
-        assignRolesStep(jwtAdminDTO, studentResponseDTO, Roles.STUDENT);
+        assignRolesStep(jwtAdminDTO, student1ResponseDTO, Roles.STUDENT);
+
+        // Student 1
+        Student student2 = EntityCreatorUtil.createStudent(RandomStringUtils.randomAlphabetic(10));
+        signUpUserStep(student2);
+        JWTTokenDTO jwtStudent2DTO = loginUserStep(student2);
+        UserResponseDTO student2ResponseDTO = attemptAuthenticatedRequestStep(student2, jwtStudent2DTO);
+        // Assign STUDENT role
+        assignRolesStep(jwtAdminDTO, student2ResponseDTO, Roles.STUDENT);
 
         // Instructor
         Instructor instructor = EntityCreatorUtil.createInstructor(RandomStringUtils.randomAlphabetic(10));
@@ -192,22 +199,217 @@ class CourseManagementScenariosTest {
         LessonsUpdateDTO lessonsUpdateDTO = prepareLessonsStep();
 
         // Upload lessons
-        CourseResponseDTO courseLessonsDTO = uploadLessonsStep(courseDTO.getId(), lessonsUpdateDTO, jwtAdminDTO);
+        CourseResponseDTO courseLessonsDTO = uploadLessonsStep(courseDTO.getId(), lessonsUpdateDTO, jwtInstructorDTO);
 
-        // Subscribe student
-        subscribeStudentStep(courseDTO, jwtStudentDTO);
-        validateStudentSubscribedStep(courseDTO, studentResponseDTO, jwtAdminDTO);
+        // Subscribe student 1
+        subscribeStudentStep(courseDTO, jwtStudent1DTO);
+        validateStudentSubscribedStep(courseDTO, student1ResponseDTO, jwtAdminDTO);
 
-//        /lesson/{lessonId}/homework
-//        .file("file", "{\"key1\": \"value1\"}".getBytes())
+        // Subscribe student 2
+        subscribeStudentStep(courseDTO, jwtStudent2DTO);
+        validateStudentSubscribedStep(courseDTO, student2ResponseDTO, jwtAdminDTO);
+
         // Upload homeworks for lessons
-        uploadLessonHomeworkStep(courseLessonsDTO, jwtStudentDTO);
+        uploadLessonHomeworkStep(courseLessonsDTO, jwtStudent1DTO);
+        Page<HomeworkResponseDTO> homeworkResponseDTOS = validateHomeworksStep(jwtStudent1DTO, jwtInstructorDTO);
 
-        validateHomeworksStep(courseLessonsDTO, jwtInstructorDTO);
+        // Assign submissions for lessons
+        assignSubmissionsCourseSuccessfulStep(courseLessonsDTO, student1ResponseDTO.getId(), jwtStudent1DTO, jwtInstructorDTO);
+        assignSubmissionsCourseFailedStep(courseLessonsDTO, student2ResponseDTO.getId(), jwtStudent2DTO, jwtInstructorDTO);
+
+        // Leave course feedback
+        saveCourseFeedbackStep(courseLessonsDTO,  student1ResponseDTO.getId(), jwtStudent1DTO);
     }
 
-    void validateHomeworksStep(CourseResponseDTO courseLessonsDTO, JWTTokenDTO jwtInstructorDTO) {
+    void saveCourseFeedbackStep(CourseResponseDTO courseLessonsDTO, Long studentId, JWTTokenDTO jwtStudent1DTO)
+            throws Exception {
+        CourseFeedbackRequestDTO courseFeedbackRequestDTO = new CourseFeedbackRequestDTO();
+        courseFeedbackRequestDTO.setCourseId(courseLessonsDTO.getId());
+        courseFeedbackRequestDTO.setFeedback(RandomStringUtils.randomAlphabetic(50));
+        MvcResult courseFeedbackMvcResult = mockMvc.perform(post("/api/v1/course-feedbacks")
+                        .headers(getHttpHeadersFromToken(jwtStudent1DTO))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(TestUtil.convertObjectToJsonBytes(courseFeedbackRequestDTO)))
+                .andExpect(status().isCreated())
+                .andReturn();
 
+        CourseFeedbackResponseDTO courseFeedbackResponseDTO = JacksonUtil.deserialize(courseFeedbackMvcResult.getResponse().getContentAsString(),
+                new TypeReference<>() {
+                });
+
+        mockMvc.perform(get("/api/v1/course-feedbacks/" + courseFeedbackResponseDTO.getId())
+                        .headers(getHttpHeadersFromToken(jwtStudent1DTO))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    void assignSubmissionsCourseFailedStep(CourseResponseDTO courseDTO, Long studentId,
+                                               JWTTokenDTO jwtStudentDTO, JWTTokenDTO jwtInstructorDTO) throws Exception {
+        Set<LessonResponseDTO> lessons = courseDTO.getLessons();
+
+        // Put submissions for first 3 lessons
+        Iterable<LessonResponseDTO> first3LessonResponseDTOS = Iterables.limit(lessons, 3);
+        for (LessonResponseDTO lessonResponseDTO: first3LessonResponseDTOS) {
+            SubmissionRequestDTO submissionRequestDTO = new SubmissionRequestDTO();
+            submissionRequestDTO.setGrade(new Random().nextDouble(0.0, 80.0));
+            submissionRequestDTO.setLessonId(lessonResponseDTO.getId());
+            submissionRequestDTO.setStudentId(studentId);
+            mockMvc.perform(post("/api/v1/submissions")
+                            .headers(getHttpHeadersFromToken(jwtInstructorDTO))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(TestUtil.convertObjectToJsonBytes(submissionRequestDTO)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.grade", Matchers.is(submissionRequestDTO.getGrade())))
+                    .andExpect(jsonPath("$.lessonId", Matchers.is(submissionRequestDTO.getLessonId().intValue())))
+                    .andExpect(jsonPath("$.studentId", Matchers.is(submissionRequestDTO.getStudentId().intValue())));
+        }
+
+        mockMvc.perform(get("/api/v1/courses/" + courseDTO.getId() + "/status")
+                        .headers(getHttpHeadersFromToken(jwtStudentDTO))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.courseStatus", Matchers.is(CourseStatus.IN_PROGRESS.name())))
+                .andExpect(jsonPath("$.finalGrade", Matchers.nullValue()));
+
+        mockMvc.perform(get("/api/v1/courses/my")
+                        .headers(getHttpHeadersFromToken(jwtStudentDTO))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$", Matchers.hasSize(1)))
+                .andExpect(jsonPath("$.*.courseStatus", Matchers.hasItem(CourseStatus.IN_PROGRESS.name())))
+                .andExpect(jsonPath("$.*.finalGrade", Matchers.hasItem(Matchers.nullValue())));
+
+
+        Iterable<LessonResponseDTO> last2LessonResponseDTOS = Iterables.limit(Iterables.skip(lessons, 3), 2);
+        for (LessonResponseDTO lessonResponseDTO: last2LessonResponseDTOS) {
+            SubmissionRequestDTO submissionRequestDTO = new SubmissionRequestDTO();
+            submissionRequestDTO.setGrade(new Random().nextDouble(80.0, 100.0));
+            submissionRequestDTO.setLessonId(lessonResponseDTO.getId());
+            submissionRequestDTO.setStudentId(studentId);
+            mockMvc.perform(post("/api/v1/submissions")
+                            .headers(getHttpHeadersFromToken(jwtInstructorDTO))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(TestUtil.convertObjectToJsonBytes(submissionRequestDTO)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.grade", Matchers.is(submissionRequestDTO.getGrade())))
+                    .andExpect(jsonPath("$.lessonId", Matchers.is(submissionRequestDTO.getLessonId().intValue())))
+                    .andExpect(jsonPath("$.studentId", Matchers.is(submissionRequestDTO.getStudentId().intValue())));
+        }
+
+        mockMvc.perform(get("/api/v1/courses/" + courseDTO.getId() + "/status")
+                        .headers(getHttpHeadersFromToken(jwtStudentDTO))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.courseStatus", Matchers.is(CourseStatus.FAILED.name())))
+                .andExpect(jsonPath("$.finalGrade", Matchers.notNullValue()));
+
+        mockMvc.perform(get("/api/v1/courses/my")
+                        .headers(getHttpHeadersFromToken(jwtStudentDTO))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$", Matchers.hasSize(1)))
+                .andExpect(jsonPath("$.*.courseStatus", Matchers.hasItem(CourseStatus.FAILED.name())))
+                .andExpect(jsonPath("$.*.finalGrade", Matchers.hasItem(Matchers.notNullValue())));
+    }
+
+    void assignSubmissionsCourseSuccessfulStep(CourseResponseDTO courseDTO, Long studentId,
+                                               JWTTokenDTO jwtStudentDTO, JWTTokenDTO jwtInstructorDTO) throws Exception {
+        Set<LessonResponseDTO> lessons = courseDTO.getLessons();
+
+        // Put submissions for first 3 lessons
+        Iterable<LessonResponseDTO> first3LessonResponseDTOS = Iterables.limit(lessons, 3);
+        for (LessonResponseDTO lessonResponseDTO: first3LessonResponseDTOS) {
+            SubmissionRequestDTO submissionRequestDTO = new SubmissionRequestDTO();
+            submissionRequestDTO.setGrade(new Random().nextDouble(80.0, 100.0));
+            submissionRequestDTO.setLessonId(lessonResponseDTO.getId());
+            submissionRequestDTO.setStudentId(studentId);
+            mockMvc.perform(post("/api/v1/submissions")
+                            .headers(getHttpHeadersFromToken(jwtInstructorDTO))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(TestUtil.convertObjectToJsonBytes(submissionRequestDTO)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.grade", Matchers.is(submissionRequestDTO.getGrade())))
+                    .andExpect(jsonPath("$.lessonId", Matchers.is(submissionRequestDTO.getLessonId().intValue())))
+                    .andExpect(jsonPath("$.studentId", Matchers.is(submissionRequestDTO.getStudentId().intValue())));
+        }
+
+        mockMvc.perform(get("/api/v1/courses/" + courseDTO.getId() + "/status")
+                        .headers(getHttpHeadersFromToken(jwtStudentDTO))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.courseStatus", Matchers.is(CourseStatus.IN_PROGRESS.name())))
+                .andExpect(jsonPath("$.finalGrade", Matchers.nullValue()));
+
+        mockMvc.perform(get("/api/v1/courses/my")
+                        .headers(getHttpHeadersFromToken(jwtStudentDTO))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$", Matchers.hasSize(1)))
+                .andExpect(jsonPath("$.*.courseStatus", Matchers.hasItem(CourseStatus.IN_PROGRESS.name())))
+                .andExpect(jsonPath("$.*.finalGrade", Matchers.hasItem(Matchers.nullValue())));
+
+        Iterable<LessonResponseDTO> last2LessonResponseDTOS = Iterables.limit(Iterables.skip(lessons, 3), 2);
+        for (LessonResponseDTO lessonResponseDTO: last2LessonResponseDTOS) {
+            SubmissionRequestDTO submissionRequestDTO = new SubmissionRequestDTO();
+            submissionRequestDTO.setGrade(new Random().nextDouble(80.0, 100.0));
+            submissionRequestDTO.setLessonId(lessonResponseDTO.getId());
+            submissionRequestDTO.setStudentId(studentId);
+            mockMvc.perform(post("/api/v1/submissions")
+                            .headers(getHttpHeadersFromToken(jwtInstructorDTO))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(TestUtil.convertObjectToJsonBytes(submissionRequestDTO)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.grade", Matchers.is(submissionRequestDTO.getGrade())))
+                    .andExpect(jsonPath("$.lessonId", Matchers.is(submissionRequestDTO.getLessonId().intValue())))
+                    .andExpect(jsonPath("$.studentId", Matchers.is(submissionRequestDTO.getStudentId().intValue())));
+        }
+
+        mockMvc.perform(get("/api/v1/courses/" + courseDTO.getId() + "/status")
+                        .headers(getHttpHeadersFromToken(jwtStudentDTO))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.courseStatus", Matchers.is(CourseStatus.COMPLETED.name())))
+                .andExpect(jsonPath("$.finalGrade", Matchers.notNullValue()));
+
+        mockMvc.perform(get("/api/v1/courses/my")
+                        .headers(getHttpHeadersFromToken(jwtStudentDTO))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$", Matchers.hasSize(1)))
+                .andExpect(jsonPath("$.*.courseStatus", Matchers.hasItem(CourseStatus.COMPLETED.name())))
+                .andExpect(jsonPath("$.*.finalGrade", Matchers.hasItem(Matchers.notNullValue())));
+    }
+
+    Page<HomeworkResponseDTO> validateHomeworksStep(JWTTokenDTO jwtStudentDTO, JWTTokenDTO jwtInstructorDTO) throws Exception {
+        // Get homeworks from instructor
+        mockMvc.perform(get("/api/v1/homeworks?sort=id,desc")
+                        .headers(getHttpHeadersFromToken(jwtInstructorDTO)))
+                .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.content").exists())
+                        .andExpect(jsonPath("$.content").isArray())
+                        .andExpect(jsonPath("$.content", Matchers.hasSize(5)))
+                        .andExpect(jsonPath("$.totalElements", Matchers.is(5)))
+                        .andExpect(jsonPath("$.numberOfElements", Matchers.is(5)))
+                        .andExpect(jsonPath("$.sort.sorted", Matchers.is(true)));
+
+        // Get homeworks from student
+        MvcResult studentHomeworksResponse = mockMvc.perform(get("/api/v1/homeworks?sort=id,desc")
+                        .headers(getHttpHeadersFromToken(jwtStudentDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").exists())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content", Matchers.hasSize(5)))
+                .andExpect(jsonPath("$.totalElements", Matchers.is(5)))
+                .andExpect(jsonPath("$.numberOfElements", Matchers.is(5)))
+                .andExpect(jsonPath("$.sort.sorted", Matchers.is(true)))
+                .andReturn();
+
+        return JacksonUtil.deserialize(studentHomeworksResponse.getResponse().getContentAsString(),
+                new TypeReference<ResponsePage<HomeworkResponseDTO>>() {});
     }
 
     void uploadLessonHomeworkStep(CourseResponseDTO courseLessonsDTO, JWTTokenDTO jwtStudentDTO) throws Exception {
@@ -219,7 +421,7 @@ class CourseManagementScenariosTest {
         }
     }
 
-    LessonsUpdateDTO prepareLessonsStep() throws Exception {
+    LessonsUpdateDTO prepareLessonsStep() {
         LessonRequestDTO lesson1DTO = LessonRequestDTO.builder()
                 .title("Lesson 1 Title")
                 .description("Lesson 1 Description").build();
@@ -246,9 +448,8 @@ class CourseManagementScenariosTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        final CourseResponseDTO courseLessonsDTO = JacksonUtil.deserialize(lessonsMvcResult.getResponse().getContentAsString(),
+        return JacksonUtil.deserialize(lessonsMvcResult.getResponse().getContentAsString(),
                 new TypeReference<CourseResponseDTO>() {});
-        return courseLessonsDTO;
     }
 
     void uploadAndUpdateLessonsForCourseStep(CourseResponseDTO courseDTO, JWTTokenDTO jwtAdminDTO) throws Exception {
@@ -261,11 +462,13 @@ class CourseManagementScenariosTest {
         // Update course lessons
         Set<LessonRequestDTO> lessonsToPatch = new HashSet<>(lessonMapper.fromResponseToRequest(courseLessonsDTO.getLessons()));
 
+        //noinspection OptionalGetWithoutIsPresent
         LessonRequestDTO lesson1DTOToUpdate = lessonsToPatch.stream()
                 .filter(lesson -> lesson.getTitle().equals("Lesson 1 Title")).findFirst().get();
         lesson1DTOToUpdate.setTitle("Lesson 1 Title Updated");
         lesson1DTOToUpdate.setDescription("Lesson 1 Description Updated");
 
+        //noinspection OptionalGetWithoutIsPresent
         LessonRequestDTO lesson4DTOToDelete = lessonsToPatch.stream()
                 .filter(lesson -> lesson.getTitle().equals("Lesson 4 Title")).findFirst().get();
         lessonsToPatch.remove(lesson4DTOToDelete);
@@ -304,9 +507,8 @@ class CourseManagementScenariosTest {
                         .content(TestUtil.convertObjectToJsonBytes(courseRequestDTO)))
                 .andExpect(status().isCreated())
                 .andReturn();
-        final CourseResponseDTO courseDTO = JacksonUtil.deserialize(courseMvcResult.getResponse().getContentAsString(),
+        return JacksonUtil.deserialize(courseMvcResult.getResponse().getContentAsString(),
                 new TypeReference<CourseResponseDTO>() {});
-        return courseDTO;
     }
 
     void deleteCourseStep(CourseResponseDTO courseDTO) throws Exception {
@@ -352,7 +554,8 @@ class CourseManagementScenariosTest {
                 .andReturn();
 
         final CourseResponseDTO actualCourseDTO = JacksonUtil.deserialize(actualCourseResult.getResponse().getContentAsString(),
-                new TypeReference<CourseResponseDTO>() {});
+                new TypeReference<>() {
+                });
 
         assertThat(actualCourseDTO.getStudentIds()).contains(student.getId());
     }
@@ -394,9 +597,8 @@ class CourseManagementScenariosTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        final JWTTokenDTO jwtTokenDTO = JacksonUtil.deserialize(loginMvcResult.getResponse().getContentAsString(),
+        return JacksonUtil.deserialize(loginMvcResult.getResponse().getContentAsString(),
                 new TypeReference<JWTTokenDTO>() {});
-        return jwtTokenDTO;
     }
 
     private void attemptUnauthorizedRequestStep() throws Exception {
@@ -414,7 +616,8 @@ class CourseManagementScenariosTest {
                 .andReturn();
 
         UserResponseDTO userDTO = JacksonUtil.deserialize(mvcResult.getResponse().getContentAsString(),
-                new TypeReference<UserResponseDTO>() {});
+                new TypeReference<>() {
+                });
 
         assertThat(userDTO.getEmail()).isEqualTo(user.getEmail());
         assertThat(userDTO.getFirstName()).isEqualTo(user.getFirstName());
@@ -440,7 +643,8 @@ class CourseManagementScenariosTest {
                 .andReturn();
 
         JWTTokenDTO refreshedJwtTokenDTO = JacksonUtil.deserialize(jwtRefreshMvcResult.getResponse().getContentAsString(),
-                new TypeReference<JWTTokenDTO>() {});
+                new TypeReference<>() {
+                });
 
         MvcResult mvcRefreshedTokensResult = mockMvc.perform(
                         get("/api/v1/users/me").headers(getHttpHeadersFromToken(refreshedJwtTokenDTO))
@@ -449,7 +653,8 @@ class CourseManagementScenariosTest {
                 .andReturn();
 
         UserResponseDTO userRefreshedResponseDTO = JacksonUtil.deserialize(mvcRefreshedTokensResult.getResponse().getContentAsString(),
-                new TypeReference<UserResponseDTO>() {});
+                new TypeReference<>() {
+                });
 
         assertThat(userRefreshedResponseDTO.getEmail()).isEqualTo(user.getEmail());
         assertThat(userRefreshedResponseDTO.getFirstName()).isEqualTo(user.getFirstName());

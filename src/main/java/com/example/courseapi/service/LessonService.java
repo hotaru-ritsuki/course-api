@@ -2,7 +2,6 @@ package com.example.courseapi.service;
 
 import com.example.courseapi.config.args.generic.Filters;
 import com.example.courseapi.domain.Lesson;
-import com.example.courseapi.domain.User;
 import com.example.courseapi.dto.request.LessonRequestDTO;
 import com.example.courseapi.dto.response.LessonResponseDTO;
 import org.springframework.data.domain.Page;
@@ -22,7 +21,7 @@ public interface LessonService {
      * @param id the ID of the {@link LessonResponseDTO} to find.
      * @return an {@link Optional} with the {@link LessonResponseDTO}, or empty if not found.
      */
-    Optional<LessonResponseDTO> findById(Long id);
+    Optional<LessonResponseDTO> findById(final Long id);
 
     /**
      * Saves a {@link LessonRequestDTO}.
@@ -30,7 +29,7 @@ public interface LessonService {
      * @param lessonRequestDTO the {@link LessonRequestDTO} to save.
      * @return the saved {@link LessonResponseDTO}.
      */
-    LessonResponseDTO save(LessonRequestDTO lessonRequestDTO);
+    LessonResponseDTO save(final LessonRequestDTO lessonRequestDTO);
 
     /**
      * Finds all {@link LessonResponseDTO} objects that match the given filters and pageable.
@@ -39,7 +38,7 @@ public interface LessonService {
      * @param pageable the pagination information to apply when retrieving the courses
      * @return a {@link Page} with the {@link LessonResponseDTO} objects found.
      */
-    Page<LessonResponseDTO> findAll(Filters filters, Pageable pageable);
+    Page<LessonResponseDTO> findAll(final Filters filters, final Pageable pageable);
 
     /**
      * Finds all {@link LessonResponseDTO} objects associated with a specific course.
@@ -47,12 +46,12 @@ public interface LessonService {
      * @param courseId the ID of the course.
      * @return a list with the {@link LessonResponseDTO} objects associated with the course.
      */
-    List<LessonResponseDTO> findByCourseId(Long courseId);
+    List<LessonResponseDTO> findByCourseId(final Long courseId);
 
     /**
      * Deletes a {@link LessonResponseDTO} by ID.
      *
      * @param lessonId the ID of the {@link LessonResponseDTO} to delete.
      */
-    void delete(Long lessonId);
+    void delete(final Long lessonId);
 }

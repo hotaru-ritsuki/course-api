@@ -23,6 +23,7 @@ import java.util.Set;
 public class AccessValidator implements Validator {
     private final CourseRepository courseRepository;
 
+    @Override
     public User getPrincipalOrThrow() {
         return Optional.ofNullable(SecurityContextHolder.getContext())
                 .map(SecurityContext::getAuthentication)
@@ -33,7 +34,7 @@ public class AccessValidator implements Validator {
     }
 
     @Override
-    public boolean courseAccess(Long courseId, Set<Long> instructorIds) {
+    public boolean courseAccess(final Long courseId, final Set<Long> instructorIds) {
         User principal = getPrincipalOrThrow();
         if (principal instanceof Admin) {
             return true;
@@ -49,7 +50,12 @@ public class AccessValidator implements Validator {
     }
 
     @Override
-    public boolean courseFeedbackAccess(Long courseId) {
+    public boolean courseAccess(final Long courseId) {
+        return courseAccess(courseId, null);
+    }
+
+    @Override
+    public boolean courseFeedbackAccess(final Long courseId) {
         User principal = getPrincipalOrThrow();
         if (principal instanceof Student student) {
             if (!courseRepository.existsByIdAndStudentsId(courseId, student.getId())) {
@@ -61,7 +67,7 @@ public class AccessValidator implements Validator {
     }
 
     @Override
-    public boolean homeworkAccess(Long lessonId, Long studentId) {
+    public boolean homeworkAccess(final Long lessonId, final Long studentId) {
         User principal = getPrincipalOrThrow();
         if (Objects.nonNull(studentId) && principal instanceof Admin) {
             return true;
@@ -77,12 +83,12 @@ public class AccessValidator implements Validator {
     }
 
     @Override
-    public boolean lessonAccess(Long courseId) {
+    public boolean lessonAccess(final Long courseId) {
         return courseAccess(courseId, null);
     }
 
     @Override
-    public boolean submissionAccess(Long lessonId, Long studentId) {
+    public boolean submissionAccess(final Long lessonId, final Long studentId) {
         User principal = getPrincipalOrThrow();
         if (principal instanceof Admin) {
             return true;
@@ -101,7 +107,7 @@ public class AccessValidator implements Validator {
     }
 
     @Override
-    public boolean submissionAccess(Long lessonId) {
+    public boolean submissionAccess(final Long lessonId) {
         return submissionAccess(lessonId, null);
     }
 }

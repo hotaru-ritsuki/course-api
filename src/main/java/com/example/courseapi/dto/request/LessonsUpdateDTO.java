@@ -1,6 +1,5 @@
 package com.example.courseapi.dto.request;
 
-import com.example.courseapi.dto.response.LessonResponseDTO;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;

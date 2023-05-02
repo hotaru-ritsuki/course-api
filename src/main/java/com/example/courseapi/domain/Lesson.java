@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.experimental.SuperBuilder;
 
+import java.io.Serial;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -21,6 +22,9 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Lesson extends BaseEntity {
+    @Serial
+    private static final long serialVersionUID = -7124353463291638392L;
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -40,6 +44,8 @@ public class Lesson extends BaseEntity {
     @JoinColumn(name = "course_id")
     private Course course;
 
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     @Builder.Default
     @OneToMany(mappedBy = "lesson", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Set<Submission> submissions = new HashSet<>();

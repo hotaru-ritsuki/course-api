@@ -33,7 +33,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<UserResponseDTO> getUsers(Filters filters, Pageable pageable) {
+    public Page<UserResponseDTO> getUsers(final Filters filters, final Pageable pageable) {
+        log.debug("Finding all users by filters and pageable");
         return userRepository.findAll(new SpecificationBuilder<User>(filters).build(), pageable)
                 .map(userMapper::toResponseDto);
 
@@ -41,14 +42,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserResponseDTO saveUser(UserRequestDTO userDTO) {
+    public UserResponseDTO saveUser(final UserRequestDTO userDTO) {
+        log.debug("Saving user : {}", userDTO);
         User user = userMapper.fromRequestDto(userDTO);
         return userMapper.toResponseDto(userRepository.save(user));
     }
 
     @Override
     @Transactional
-    public UserResponseDTO updateUser(UserRequestDTO userDTO) {
+    public UserResponseDTO updateUser(final UserRequestDTO userDTO) {
+        log.debug("Updating user : {}", userDTO);
         User user = userRepository.findById(userDTO.getId()).orElseThrow(() ->
                 new SystemException("User with id: " + userDTO.getId() + " not found.", ErrorCode.BAD_REQUEST));
         user.setFirstName(userDTO.getFirstName());
@@ -61,7 +64,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void addRoleToUser(String email, Roles role) {
+    public void addRoleToUser(final String email, final Roles role) {
+        log.debug("Adding role `{}` to user with email: {}", role, email);
         User user = userRepository.findByEmail(email).orElseThrow(() ->
                 new SystemException("User with email: " + email + " not found.", ErrorCode.BAD_REQUEST));
         user.setRole(role);
@@ -70,21 +74,24 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserResponseDTO findUserByEmail(String email) {
+    public UserResponseDTO findUserByEmail(final String email) {
+        log.debug("Finding user with email: {}", email);
         return userMapper.toResponseDto(userRepository.findByEmail(email).orElseThrow(() ->
-                new SystemException("User with email: " + email + " not found.", ErrorCode.BAD_REQUEST)));
+                new SystemException("User with email: " + email + " not found.", ErrorCode.NOT_FOUND)));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public UserResponseDTO getUserById(Long id) {
-        return userMapper.toResponseDto(userRepository.findById(id).orElseThrow(() ->
-                new SystemException("User with id: " + id + " not found.", ErrorCode.NOT_FOUND)));
+    public UserResponseDTO getUserById(final Long userId) {
+        log.debug("Finding user with id: {}", userId);
+        return userMapper.toResponseDto(userRepository.findById(userId).orElseThrow(() ->
+                new SystemException("User with id: " + userId + " not found.", ErrorCode.NOT_FOUND)));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public UserResponseDTO mapCurrentUser(User user) {
+    public UserResponseDTO mapCurrentUser(final User user) {
+        log.debug("Mapping current user: {}", user.getId());
         if (user instanceof Student currentStudent) {
             return studentMapper.toResponseDto(currentStudent);
         } else if (user instanceof Instructor currentInstructor) {
@@ -96,7 +103,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void delete(Long userId) {
+    public void delete(final Long userId) {
+        log.debug("Deleting user with id: {}", userId);
         User user = userRepository.findById(userId).orElseThrow(() ->
                 new SystemException("User with id: " + userId + " not found.", ErrorCode.BAD_REQUEST));
         if (user instanceof Student student) {
@@ -111,7 +119,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserResponseDTO assingRoleForUser(Long userId, Roles role) {
+    public UserResponseDTO assingRoleForUser(final Long userId, final Roles role) {
+        log.debug("Adding role `{}` to user with id: {}", role, userId);
         User user = userRepository.findById(userId).orElseThrow(() ->
                 new SystemException("User with id: " + userId + " not found.", ErrorCode.BAD_REQUEST));
         user.setRole(role);

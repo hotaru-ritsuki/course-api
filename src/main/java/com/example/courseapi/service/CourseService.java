@@ -26,7 +26,7 @@ public interface CourseService {
      * @param id the ID of the course to find
      * @return an optional containing the found course DTO, or empty if not found
      */
-    Optional<CourseResponseDTO> findById(Long id);
+    Optional<CourseResponseDTO> findById(final Long id);
 
     /**
      * Saves a new course or updates an existing one.
@@ -34,7 +34,7 @@ public interface CourseService {
      * @param courseDTO the course DTO to save or update
      * @return the saved or updated course DTO
      */
-    CourseResponseDTO save(CourseRequestDTO courseDTO);
+    CourseResponseDTO save(final CourseRequestDTO courseDTO);
 
     /**
      * Finds all courses with optional filters and pagination.
@@ -43,7 +43,7 @@ public interface CourseService {
      * @param pageable the pagination information to apply when retrieving the courses
      * @return a page containing the found course DTOs
      */
-    Page<CourseResponseDTO> findAll(Filters filters, Pageable pageable, User user);
+    Page<CourseResponseDTO> findAll(final Filters filters, final Pageable pageable, final User user);
 
     /**
      * Finds all courses associated with a specific student ID.
@@ -51,14 +51,14 @@ public interface CourseService {
      * @param studentId the ID of the student to find courses for
      * @return a list containing the found course DTOs
      */
-    List<CourseResponseDTO> findByStudentId(Long studentId);
+    List<CourseResponseDTO> findByStudentId(final Long studentId);
 
     /**
      * Deletes a course with the given ID.
      *
      * @param courseId the ID of the course to delete
      */
-    void delete(Long courseId);
+    void delete(final Long courseId);
 
     /**
      * Subscribes a student to a course.
@@ -66,7 +66,7 @@ public interface CourseService {
      * @param courseId  the ID of the course to subscribe the student to
      * @param studentId the ID of the student to subscribe to the course
      */
-    void subscribeStudentToCourse(Long courseId, Long studentId);
+    void subscribeStudentToCourse(final Long courseId, final Long studentId);
 
     /**
      * Retrieves the course status for a student in a specific course.
@@ -75,7 +75,7 @@ public interface CourseService {
      * @param studentId the ID of the student to retrieve the status for
      * @return the course status DTO for the given course and student
      */
-    CourseStatusResponseDTO getCourseStatus(Long courseId, Long studentId);
+    CourseStatusResponseDTO getCourseStatus(final Long courseId, final Long studentId);
 
     /**
      * Calculates the course grade for a student in a specific course.
@@ -84,7 +84,7 @@ public interface CourseService {
      * @param course    the course to calculate the grade for
      * @return the course grade DTO for the given student and course
      */
-    CourseGradeDTO calculateCourseStatus(Long studentId, Course course);
+    CourseGradeDTO calculateCourseStatus(final Long studentId, final Course course);
 
     /**
      * Calculates the course grades for a set of courses for a specific student.
@@ -93,7 +93,7 @@ public interface CourseService {
      * @param courses   the set of courses to calculate the grades for
      * @return a set of course grade DTOs for the given student and courses
      */
-    Set<CourseGradeDTO> calculateCourseStatus(Long studentId, Set<Course> courses);
+    Set<CourseGradeDTO> calculateCourseStatus(final Long studentId, final Set<Course> courses);
 
     /**
      * Checks if a student is subscribed to a specific course.
@@ -102,7 +102,7 @@ public interface CourseService {
      * @param studentId the ID of the student to check for subscription
      * @return true if the student is subscribed to the course, false otherwise
      */
-    boolean isStudentSubscribedToCourse(Long courseId, Long studentId);
+    boolean isStudentSubscribedToCourse(final Long courseId, final Long studentId);
 
     /**
      * Retrieves all courses associated with a specific user ID.
@@ -110,25 +110,25 @@ public interface CourseService {
      * @param userId the ID of the user to retrieve courses for
      * @return a set of course DTOs associated with the given user ID
      */
-    Set<? extends CourseResponseDTO> getMyCourses(Long userId);
+    Set<? extends CourseResponseDTO> getMyCourses(final Long userId);
 
     /**
      * Adds an instructor with the given ID to the course with the given ID.
      *
      * @param courseId     the ID of the course.
      * @param instructorId the ID of the instructor to be added.
-     * @return
+     * @return returns response DTO of the course.
      */
-    CourseResponseDTO addInstructorToCourse(Long courseId, Long instructorId);
+    CourseResponseDTO addInstructorToCourse(final Long courseId, final Long instructorId);
 
     /**
      * Deletes an instructor with the given ID from the course with the given ID.
      *
      * @param courseId     the ID of the course.
      * @param instructorId the ID of the instructor to be deleted.
-     * @return
+     * @return returns response DTO of the course.
      */
-    CourseResponseDTO deleteInstructorForCourse(Long courseId, Long instructorId);
+    CourseResponseDTO deleteInstructorForCourse(final Long courseId, final Long instructorId);
 
-    CourseResponseDTO updateCourseLessons(Long courseId, LessonsUpdateDTO lessonsDTO);
+    CourseResponseDTO updateCourseLessonsAndSave(final Long courseId, final LessonsUpdateDTO lessonsDTO);
 }

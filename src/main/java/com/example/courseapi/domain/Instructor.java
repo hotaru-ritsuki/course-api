@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.io.Serial;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -16,6 +17,8 @@ import java.util.Set;
 @AllArgsConstructor
 @SuperBuilder
 public final class Instructor extends User {
+    @Serial
+    private static final long serialVersionUID = -582900698897846648L;
 
     @Builder.Default
     @ManyToMany(mappedBy = "instructors", fetch = FetchType.EAGER)

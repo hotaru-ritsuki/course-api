@@ -16,17 +16,17 @@ public interface CourseFeedbackMapper extends EntityMapper<CourseFeedbackRequest
 
     @Mapping(source = "student.id", target = "studentId")
     @Mapping(source = "course.id", target = "courseId")
-    CourseFeedbackResponseDTO toResponseDto(CourseFeedback courseFeedback);
+    CourseFeedbackResponseDTO toResponseDto(final CourseFeedback courseFeedback);
 
     @Mapping(source = "studentId", target = "student")
     @Mapping(source = "courseId", target = "course")
-    CourseFeedback fromResponseDto(CourseFeedbackResponseDTO courseFeedbackResponseDTO);
+    CourseFeedback fromResponseDto(final CourseFeedbackResponseDTO courseFeedbackResponseDTO);
 
     @Mapping(source = "courseId", target = "course")
-    CourseFeedback fromRequestDto(CourseFeedbackRequestDTO courseFeedbackRequestDTO);
+    CourseFeedback fromRequestDto(final CourseFeedbackRequestDTO courseFeedbackRequestDTO);
 
     @Mapping(source = "course.id", target = "courseId")
-    CourseFeedbackRequestDTO toRequestDto(CourseFeedback courseFeedback);
+    CourseFeedbackRequestDTO toRequestDto(final CourseFeedback courseFeedback);
 
     default CourseFeedback fromId(Long id) {
         if (id == null) {

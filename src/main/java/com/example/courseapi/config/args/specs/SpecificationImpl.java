@@ -9,6 +9,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import jakarta.persistence.criteria.*;
 
+import java.io.Serial;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,6 +26,9 @@ import static java.util.stream.Collectors.toList;
 @RequiredArgsConstructor
 public class SpecificationImpl<T> implements Specification<T> {
 
+    @Serial
+    private static final long serialVersionUID = 75954837270031014L;
+    
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_DATE;
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
 

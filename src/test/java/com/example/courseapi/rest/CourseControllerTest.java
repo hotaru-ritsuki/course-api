@@ -132,7 +132,8 @@ class CourseControllerTest {
                 .andReturn();
 
         CourseResponseDTO courseResponseDTO = JacksonUtil.deserialize(courseSaveResult.getResponse().getContentAsString(),
-                new TypeReference<CourseResponseDTO>() {});
+                new TypeReference<>() {
+                });
 
         // Validate new Course in the database
         long databaseSizeAfterCreate = courseRepository.count();
@@ -169,7 +170,8 @@ class CourseControllerTest {
 
         // Validate new Course in the database
         CourseResponseDTO courseResponseDTO = JacksonUtil.deserialize(courseSaveResult.getResponse().getContentAsString(),
-                new TypeReference<CourseResponseDTO>() {});
+                new TypeReference<>() {
+                });
 
         // Validate new Course in the database
         long databaseSizeAfterCreate = courseRepository.count();
@@ -439,6 +441,34 @@ class CourseControllerTest {
         Course course = courseRepository.saveAndFlush(createEntity(entityManager));
         Student student = studentRepository.save(EntityCreatorUtil.createStudent());
 
+        Lesson lesson1 = Lesson.builder()
+                .title("Lesson 1 Title")
+                .description("Lesson 1 Description")
+                .build();
+        Lesson lesson2 = Lesson.builder()
+                .title("Lesson 2 Title")
+                .description("Lesson 2 Description")
+                .build();
+        Lesson lesson3 = Lesson.builder()
+                .title("Lesson 3 Title")
+                .description("Lesson 3 Description")
+                .build();
+        Lesson lesson4 = Lesson.builder()
+                .title("Lesson 4 Title")
+                .description("Lesson 4 Description")
+                .build();
+        Lesson lesson5 = Lesson.builder()
+                .title("Lesson 5 Title")
+                .description("Lesson 5 Description")
+                .build();
+        course.addLesson(lesson1);
+        course.addLesson(lesson2);
+        course.addLesson(lesson3);
+        course.addLesson(lesson4);
+        course.addLesson(lesson5);
+        lessonRepository.saveAllAndFlush(List.of(lesson1, lesson2, lesson3, lesson4, lesson5));
+        courseRepository.save(course);
+
         restCourseMockMvc.perform(put("/api/v1/courses/" + course.getId() + "/subscribe/" + student.getId()))
                 .andExpect(status().isOk());
 
@@ -468,8 +498,35 @@ class CourseControllerTest {
     public void subscribeCurrentStudentToCourse() throws Exception {
         // Initialize the database
         Course course = courseRepository.saveAndFlush(createEntity(entityManager));
-        Student student = (Student) TestSecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
+        Student student = (Student) TestSecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Lesson lesson1 = Lesson.builder()
+                .title("Lesson 1 Title")
+                .description("Lesson 1 Description")
+                .build();
+        Lesson lesson2 = Lesson.builder()
+                .title("Lesson 2 Title")
+                .description("Lesson 2 Description")
+                .build();
+        Lesson lesson3 = Lesson.builder()
+                .title("Lesson 3 Title")
+                .description("Lesson 3 Description")
+                .build();
+        Lesson lesson4 = Lesson.builder()
+                .title("Lesson 4 Title")
+                .description("Lesson 4 Description")
+                .build();
+        Lesson lesson5 = Lesson.builder()
+                .title("Lesson 5 Title")
+                .description("Lesson 5 Description")
+                .build();
+        course.addLesson(lesson1);
+        course.addLesson(lesson2);
+        course.addLesson(lesson3);
+        course.addLesson(lesson4);
+        course.addLesson(lesson5);
+        lessonRepository.saveAllAndFlush(List.of(lesson1, lesson2, lesson3, lesson4, lesson5));
+        courseRepository.save(course);
         restCourseMockMvc.perform(put("/api/v1/courses/" + course.getId() + "/subscribe"))
                 .andExpect(status().isOk());
 

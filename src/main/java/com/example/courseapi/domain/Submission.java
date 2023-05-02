@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 import static java.util.Objects.isNull;
@@ -49,6 +50,9 @@ public class Submission extends BaseEntity {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class SubmissionId implements Serializable {
+        @Serial
+        private static final long serialVersionUID = -8386131251581614960L;
+        
         @Column(name = "student_id")
         public Long studentId;
 

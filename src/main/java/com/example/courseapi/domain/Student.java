@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.io.Serial;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -18,6 +19,9 @@ import java.util.Set;
 @SuperBuilder
 public class Student extends User {
 
+    @Serial
+    private static final long serialVersionUID = 808391021538769642L;
+    
     @Size(max = 5)
     @Builder.Default
     @ManyToMany(mappedBy = "students", fetch = FetchType.EAGER)

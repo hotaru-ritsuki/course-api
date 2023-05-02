@@ -27,26 +27,26 @@ public interface CourseMapper extends EntityMapper<CourseRequestDTO, CourseRespo
             @Mapping(source = "students", target = "studentIds", qualifiedByName = "usersToIds"),
             @Mapping(source = "lessons", target = "lessons")
     })
-    CourseResponseDTO toResponseDto(Course course);
+    CourseResponseDTO toResponseDto(final Course course);
 
     @Mappings(value = {
             @Mapping(source = "instructors", target = "instructorIds", qualifiedByName = "usersToIds"),
             @Mapping(source = "students", target = "studentIds", qualifiedByName = "usersToIds")
     })
-    CourseRequestDTO toRequestDto(Course course);
+    CourseRequestDTO toRequestDto(final Course course);
 
     @Mappings(value = {
             @Mapping(source = "instructorIds", target = "instructors", qualifiedByName = "idsToInstructors"),
             @Mapping(source = "studentIds", target = "students", qualifiedByName = "idsToStudents"),
             @Mapping(source = "lessons", target = "lessons")
     })
-    Course fromResponseDto(CourseResponseDTO courseDTO);
+    Course fromResponseDto(final CourseResponseDTO courseDTO);
 
     @Mappings(value = {
             @Mapping(source = "instructorIds", target = "instructors", qualifiedByName = "idsToInstructors"),
             @Mapping(source = "studentIds", target = "students", qualifiedByName = "idsToStudents")
     })
-    Course fromRequestDto(CourseRequestDTO courseDTO);
+    Course fromRequestDto(final CourseRequestDTO courseDTO);
 
     @Mappings(value = {
             @Mapping(source = "course.instructors", target = "instructorIds", qualifiedByName = "usersToIds"),
@@ -55,13 +55,14 @@ public interface CourseMapper extends EntityMapper<CourseRequestDTO, CourseRespo
             @Mapping(source = "courseGradeDTO.courseStatus", target = "courseStatus"),
             @Mapping(source = "courseGradeDTO.finalGrade", target = "finalGrade")
     })
-    CourseStatusResponseDTO toResponseStatusDto(Course course, Long studentId, CourseGradeDTO courseGradeDTO);
+    CourseStatusResponseDTO toResponseStatusDto(
+            final Course course, final Long studentId, final CourseGradeDTO courseGradeDTO);
 
     @Mappings(value = {
             @Mapping(source = "instructorIds", target = "instructors", qualifiedByName = "idsToInstructors"),
             @Mapping(source = "studentIds", target = "students", qualifiedByName = "idsToStudents")
     })
-    Course fromResponseStatusDto(CourseStatusResponseDTO courseStatusDTO);
+    Course fromResponseStatusDto(final CourseStatusResponseDTO courseStatusDTO);
 
     default Course fromId(Long id) {
         if (id == null) {

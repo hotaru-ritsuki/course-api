@@ -73,7 +73,7 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authenticationProvider(authenticationProvider)
-                .addFilterBefore(new JwtAuthenticationFilter(jwtService, userDetailsService, userRepository), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtAuthenticationFilter(jwtService, userDetailsService), UsernamePasswordAuthenticationFilter.class);
         log.debug("SecurityFilterChain successfully created with authentication provider {} and user details service {}",
                 authenticationProvider.getClass().getSimpleName(), userDetailsService.getClass().getSimpleName());
         return http.build();

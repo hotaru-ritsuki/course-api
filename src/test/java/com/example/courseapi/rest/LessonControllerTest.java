@@ -27,7 +27,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -124,7 +123,8 @@ class LessonControllerTest {
                 .andReturn();
 
         LessonResponseDTO lessonResponseDTO = JacksonUtil.deserialize(lessonMvcResult.getResponse().getContentAsString(),
-                new TypeReference<LessonResponseDTO>() {});
+                new TypeReference<>() {
+                });
 
         // Validate new Lesson in the database
         long databaseSizeAfterCreate = lessonRepository.count();

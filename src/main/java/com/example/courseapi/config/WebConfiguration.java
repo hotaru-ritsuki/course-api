@@ -9,6 +9,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.List;
 
+/**
+ * Web configuration for adding filter argument resolved
+ */
 @Configuration
 public class WebConfiguration implements WebMvcConfigurer {
     @Override

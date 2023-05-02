@@ -1,6 +1,5 @@
 package com.example.courseapi.security.filters;
 
-import com.example.courseapi.repository.UserRepository;
 import com.example.courseapi.security.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -33,13 +32,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
-    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(
-            @NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
+            @NonNull final HttpServletRequest request,
+            @NonNull final HttpServletResponse response,
+            @NonNull final FilterChain filterChain
     ) throws ServletException, IOException {
         log.info("Attempt to authenticate user with User-Agent {}, IP: {}", getUserAgent(request), getClientIP(request));
         final String authHeader = request.getHeader(AUTHORIZATION);

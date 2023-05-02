@@ -35,7 +35,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final AuthenticationManager authenticationManager;
 
     @Override
-    public void register(SignUpRequestDTO signUpRequestDTO) {
+    public void register(final SignUpRequestDTO signUpRequestDTO) {
         log.info("Attempting to register user with email {}", signUpRequestDTO.getEmail());
         try {
             // Check if user already exists
@@ -60,7 +60,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public JWTTokenDTO login(LoginRequestDTO loginRequestDTO, HttpServletRequest request) {
+    public JWTTokenDTO login(final LoginRequestDTO loginRequestDTO, final HttpServletRequest request) {
         log.info("Attempting to login user with email {}", loginRequestDTO.getEmail());
         try {
             // Create authentication token and authenticate user
@@ -88,7 +88,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public JWTTokenDTO refresh(final JWTRefreshDTO jwtRefreshDTO, HttpServletRequest request) {
+    public JWTTokenDTO refresh(final JWTRefreshDTO jwtRefreshDTO, final HttpServletRequest request) {
         log.info("Attempting to refresh JWT token for user with refresh token: {}", jwtRefreshDTO.getRefreshToken());
         final String refreshToken = jwtRefreshDTO.getRefreshToken();
         final String userEmail = jwtService.extractUsername(refreshToken);

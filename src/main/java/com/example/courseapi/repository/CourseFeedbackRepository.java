@@ -9,11 +9,7 @@ import java.util.List;
 
 @Repository
 public interface CourseFeedbackRepository extends JpaRepository<CourseFeedback, Long>, JpaSpecificationExecutor<CourseFeedback> {
-    List<CourseFeedback> findByStudentId(Long studentId);
-
-    List<CourseFeedback> findByCourseId(Long courseId);
-
-    List<CourseFeedback> findByFeedbackContaining(String text);
-
-    boolean existsByIdAndStudentId(Long courseFeedbackId, Long studentId);
+    List<CourseFeedback> findByStudentId(final Long studentId);
+    List<CourseFeedback> findByCourseId(final Long courseId);
+    List<CourseFeedback> findByFeedbackContaining(final String text);
 }

@@ -25,17 +25,17 @@ public class JwtServiceImpl implements JwtService {
     private final JwtProperties jwtProperties;
 
     @Override
-    public String extractUsername(String jwtToken) {
+    public String extractUsername(final String jwtToken) {
         return extractClaim(jwtToken, Claims::getSubject);
     }
 
     @Override
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+    public <T> T extractClaim(final String token, final Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
 
-    private Claims extractAllClaims(String jwtToken) {
+    private Claims extractAllClaims(final String jwtToken) {
         return Jwts
                 .parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -45,27 +45,28 @@ public class JwtServiceImpl implements JwtService {
     }
 
     @Override
-    public boolean isJwtTokenValid(String jwtToken, UserDetails userDetails) {
+    public boolean isJwtTokenValid(final String jwtToken, final UserDetails userDetails) {
         final String username = extractUsername(jwtToken);
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(jwtToken);
     }
 
-    private boolean isTokenExpired(String jwtToken) {
+    private boolean isTokenExpired(final String jwtToken) {
         Date expirationDate = extractExpirationDate(jwtToken);
         return Objects.nonNull(expirationDate) && expirationDate.before(new Date());
     }
 
-    private Date extractExpirationDate(String jwtToken) {
+    private Date extractExpirationDate(final String jwtToken) {
         return extractClaim(jwtToken, Claims::getExpiration);
     }
 
     @Override
-    public String generateJwtToken(UserDetails userDetails, boolean isAccessToken) {
+    public String generateJwtToken(final UserDetails userDetails, final boolean isAccessToken) {
         return generateJwtToken(userDetails, new HashMap<>(), isAccessToken);
     }
 
     @Override
-    public String generateJwtToken(UserDetails userDetails, Map<String, Object> extraClaims, boolean isAccessToken) {
+    public String generateJwtToken(
+            final UserDetails userDetails, final Map<String, Object> extraClaims,final boolean isAccessToken) {
         return Jwts
                 .builder()
                 .setClaims(extraClaims)

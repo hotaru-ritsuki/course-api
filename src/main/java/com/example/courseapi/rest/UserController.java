@@ -13,6 +13,7 @@ import com.example.courseapi.service.UserService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
@@ -23,9 +24,10 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+@Log4j2
 @RestController
 @RequiredArgsConstructor
-@PreAuthorize("isAuthenticated()")
+@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping(value = "/api/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 public class UserController {
 
@@ -34,15 +36,16 @@ public class UserController {
     private final UserService userService;
     private final EntityHeaderCreator entityHeaderCreator;
 
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/users")
-    public ResponseEntity<Page<UserResponseDTO>> getUsers(Filters filters, Pageable pageable) {
+    public ResponseEntity<Page<UserResponseDTO>> getUsers(final Filters filters, final Pageable pageable) {
+        log.debug("REST GET request to get a page of users");
         return ResponseEntity.ok(userService.getUsers(filters, pageable));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/users")
-    public ResponseEntity<UserResponseDTO> saveUser(@Valid @RequestBody UserRequestDTO userDTO) throws URISyntaxException {
+    public ResponseEntity<UserResponseDTO> saveUser(@Valid @RequestBody final UserRequestDTO userDTO)
+            throws URISyntaxException {
+        log.debug("REST POST request to save user : {}", userDTO);
         if (userDTO.getId() != null) {
             throw new SystemException("A new user cannot already have an ID", ErrorCode.BAD_REQUEST);
         }
@@ -52,16 +55,17 @@ public class UserController {
                 .body(result);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/users/{userId}/role")
-    public ResponseEntity<UserResponseDTO> assignRoleForUser(@PathVariable Long userId, @Valid @RequestBody RoleRequestDTO roleRequestDTO) {
-        UserResponseDTO result = userService.assingRoleForUser(userId, roleRequestDTO.getRole());
+    @RequestMapping(value = "/users/{userId}/role", method = {RequestMethod.POST, RequestMethod.PUT})
+    public ResponseEntity<UserResponseDTO> assignRoleForUser(
+            @PathVariable final Long userId, @Valid @RequestBody final RoleRequestDTO roleDTO) {
+        log.debug("REST POST request to assign role:{} user with id : {}", roleDTO, userId);
+        UserResponseDTO result = userService.assingRoleForUser(userId, roleDTO.getRole());
         return ResponseEntity.ok(result);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/users")
-    public ResponseEntity<UserResponseDTO> updateUser(@Valid @RequestBody UserRequestDTO userDTO) throws URISyntaxException {
+    public ResponseEntity<UserResponseDTO> updateUser(@Valid @RequestBody final UserRequestDTO userDTO) {
+        log.debug("REST POST request to update user : {}", userDTO);
         if (userDTO.getId() == null) {
             throw new SystemException("Invalid user id", ErrorCode.BAD_REQUEST);
         }
@@ -77,24 +81,25 @@ public class UserController {
      * @param userId the id of the user to delete.
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
-    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/users/{userId}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
+    public ResponseEntity<Void> deleteUser(@PathVariable final Long userId) {
+        log.debug("REST DELETE request to delete user with id: {}", userId);
         userService.delete(userId);
         return ResponseEntity.noContent()
                 .headers(entityHeaderCreator.createEntityDeletionAlert(ENTITY_NAME, userId.toString()))
                 .build();
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/users/{userId}")
-    public ResponseEntity<UserResponseDTO> getUser(@PathVariable Long userId) {
+    public ResponseEntity<UserResponseDTO> getUser(@PathVariable final Long userId) {
+        log.debug("REST GET request to get a user with id: {}", userId);
         return ResponseEntity.ok(userService.getUserById(userId));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT', 'INSTRUCTOR')")
     @GetMapping("/users/me")
-    public ResponseEntity<? extends UserResponseDTO> me(@NotNull @CurrentUser User currentUser) {
+    public ResponseEntity<? extends UserResponseDTO> me(@NotNull @CurrentUser final User currentUser) {
+        log.debug("REST GET request to get current user authentication");
         return ResponseEntity.ok(userService.mapCurrentUser(currentUser));
     }
 }

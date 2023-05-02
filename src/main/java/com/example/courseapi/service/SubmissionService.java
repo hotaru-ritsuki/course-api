@@ -18,7 +18,7 @@ public interface SubmissionService {
      * @param submissionRequestDTO the submission to save.
      * @return the saved submission DTO.
      */
-    SubmissionResponseDTO save(SubmissionRequestDTO submissionRequestDTO);
+    SubmissionResponseDTO save(final SubmissionRequestDTO submissionRequestDTO);
 
     /**
      * Retrieves a list of all submissions.
@@ -34,7 +34,7 @@ public interface SubmissionService {
      * @param studentId the id of the student.
      * @return an optional submission DTO.
      */
-    Optional<SubmissionResponseDTO> findById(Long lessonId, Long studentId);
+    Optional<SubmissionResponseDTO> findById(final Long lessonId, final Long studentId);
 
     /**
      * Deletes a submission by lesson and student id.
@@ -42,7 +42,7 @@ public interface SubmissionService {
      * @param lessonId  the id of the lesson.
      * @param studentId the id of the student.
      */
-    void delete(Long lessonId, Long studentId);
+    void delete(final Long lessonId, final Long studentId);
 
     /**
      * Retrieves a list of all submissions for a specific student and course.
@@ -51,7 +51,7 @@ public interface SubmissionService {
      * @param courseId  the id of the course.
      * @return a list of submission DTOs.
      */
-    List<Submission> findAllByStudentIdAndCourseId(Long studentId, Long courseId);
+    List<Submission> findAllByStudentIdAndCourseId(final Long studentId, final Long courseId);
 
     /**
      * Saves the grade for a submission.
@@ -61,7 +61,7 @@ public interface SubmissionService {
      * @param grade        the grade to save.
      * @return the saved submission DTO with the updated grade.
      */
-    SubmissionResponseDTO saveGrade(Long lessonId, Long studentId, Double grade);
+    SubmissionResponseDTO saveGrade(final Long lessonId, final Long studentId, final Double grade);
 
     /**
      * Retrieves a list of all submissions for a specific lesson, accessible by the current user.
@@ -70,7 +70,7 @@ public interface SubmissionService {
      * @param currentUserId the id of the current user.
      * @return a list of submission DTOs.
      */
-    List<SubmissionResponseDTO> findAllByLesson(Long lessonId, Long currentUserId);
+    List<SubmissionResponseDTO> findAllByLesson(final Long lessonId, final Long currentUserId);
 
     /**
      * Retrieves a list of all submissions for a specific student, accessible by the current user.
@@ -79,5 +79,5 @@ public interface SubmissionService {
      * @param currentUserId the id of the current user.
      * @return a list of submission DTOs.
      */
-    List<SubmissionResponseDTO> findAllByStudent(Long studentId, Long currentUserId);
+    List<SubmissionResponseDTO> findAllByStudent(final Long studentId, final Long currentUserId);
 }

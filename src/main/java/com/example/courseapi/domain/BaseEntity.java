@@ -11,6 +11,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -26,6 +28,8 @@ import java.time.LocalDateTime;
 @SuperBuilder
 public class BaseEntity implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = -4250007097726587148L;
     @Column(name = "modified_date")
     @LastModifiedDate
     protected LocalDateTime modifiedDate;

@@ -11,25 +11,25 @@ import java.util.Set;
  */
 public interface EntityMapper <RequestDTO, ResponseDTO, E> {
 
-    E fromRequestDto(RequestDTO dto);
-    E fromResponseDto(ResponseDTO dto);
-    RequestDTO toRequestDto(E entity);
-    ResponseDTO toResponseDto(E entity);
+    E fromRequestDto(final RequestDTO dto);
+    E fromResponseDto(final ResponseDTO dto);
+    RequestDTO toRequestDto(final E entity);
+    ResponseDTO toResponseDto(final E entity);
 
-    List<E> fromRequestDto(List<RequestDTO> re);
-    List<E> fromResponseDto(List<ResponseDTO> dto);
-    List<RequestDTO> toRequestDto(List<E> entity);
-    List<ResponseDTO> toResponseDto(List<E> entity);
+    List<E> fromRequestDto(final List<RequestDTO> re);
+    List<E> fromResponseDto(final List<ResponseDTO> dto);
+    List<RequestDTO> toRequestDto(final List<E> entity);
+    List<ResponseDTO> toResponseDto(final List<E> entity);
 
-    Set<E> fromRequestDto(Set<RequestDTO> dto);
-    Set<E> fromResponseDto(Set<ResponseDTO> dto);
-    Set<RequestDTO> toRequestDto(Set<E> entity);
-    Set<ResponseDTO> toResponseDto(Set<E> entity);
+    Set<E> fromRequestDto(final Set<RequestDTO> dto);
+    Set<E> fromResponseDto(final Set<ResponseDTO> dto);
+    Set<RequestDTO> toRequestDto(final Set<E> entity);
+    Set<ResponseDTO> toResponseDto(final Set<E> entity);
 
-    ResponseDTO fromRequestToResponse(RequestDTO dto);
-    RequestDTO fromResponseToRequest(RequestDTO dto);
-    List<ResponseDTO> fromRequestToResponse(List<RequestDTO> dto);
-    List<RequestDTO> fromResponseToRequest(List<ResponseDTO> dto);
-    Set<ResponseDTO> fromRequestToResponse(Set<RequestDTO> dto);
-    Set<RequestDTO> fromResponseToRequest(Set<ResponseDTO> dto);
+    ResponseDTO fromRequestToResponse(final RequestDTO dto);
+    RequestDTO fromResponseToRequest(final RequestDTO dto);
+    List<ResponseDTO> fromRequestToResponse(final List<RequestDTO> dto);
+    List<RequestDTO> fromResponseToRequest(final List<ResponseDTO> dto);
+    Set<ResponseDTO> fromRequestToResponse(final Set<RequestDTO> dto);
+    Set<RequestDTO> fromResponseToRequest(final Set<ResponseDTO> dto);
 }

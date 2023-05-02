@@ -28,12 +28,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -182,7 +180,7 @@ class UserControllerTest {
     public void checkFirstNameIsRequired() throws Exception {
         long databaseSizeBeforeCreate = userRepository.count();
 
-        User user = EntityCreatorUtil.createUser("1");;
+        User user = EntityCreatorUtil.createUser("1");
         // set the field null
         user.setFirstName(null);
 

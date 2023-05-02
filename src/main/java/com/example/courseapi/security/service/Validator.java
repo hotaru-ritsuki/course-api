@@ -1,17 +1,23 @@
 package com.example.courseapi.security.service;
 
+import com.example.courseapi.domain.User;
+
 import java.util.Set;
 
 public interface Validator {
-    boolean courseAccess(Long courseId, Set<Long> instructorIds);
+    User getPrincipalOrThrow();
 
-    boolean courseFeedbackAccess(Long courseId);
+    boolean courseAccess(final Long courseId, final Set<Long> instructorIds);
 
-    boolean homeworkAccess(Long lessonId, Long studentId);
+    boolean courseAccess(final Long courseId);
 
-    boolean lessonAccess(Long courseId);
+    boolean courseFeedbackAccess(final Long courseId);
 
-    boolean submissionAccess(Long lessonId, Long studentId);
+    boolean homeworkAccess(final Long lessonId, final Long studentId);
 
-    boolean submissionAccess(Long lessonId);
+    boolean lessonAccess(final Long courseId);
+
+    boolean submissionAccess(final Long lessonId, final Long studentId);
+
+    boolean submissionAccess(final Long lessonId);
 }

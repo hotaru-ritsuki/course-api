@@ -127,7 +127,8 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        JWTTokenDTO jwtTokenDTO = JacksonUtil.deserialize(mvcResult.getResponse().getContentAsString(), new TypeReference<JWTTokenDTO>() {});
+        JWTTokenDTO jwtTokenDTO = JacksonUtil.deserialize(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {
+        });
         assertTrue(jwtService.isJwtTokenValid(jwtTokenDTO.getAccessToken(), user));
         assertTrue(jwtService.isJwtTokenValid(jwtTokenDTO.getRefreshToken(), user));
 
@@ -184,7 +185,8 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        JWTTokenDTO jwtTokenDTO = JacksonUtil.deserialize(mvcResult.getResponse().getContentAsString(), new TypeReference<JWTTokenDTO>() {});
+        JWTTokenDTO jwtTokenDTO = JacksonUtil.deserialize(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {
+        });
         assertTrue(jwtService.isJwtTokenValid(jwtTokenDTO.getAccessToken(), user));
         assertTrue(jwtService.isJwtTokenValid(jwtTokenDTO.getRefreshToken(), user));
 

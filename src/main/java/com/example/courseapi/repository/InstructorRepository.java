@@ -9,7 +9,6 @@ import java.util.Optional;
 
 @Repository
 public interface InstructorRepository extends JpaRepository<Instructor, Long>, JpaSpecificationExecutor<Instructor> {
-    Optional<Instructor> findByEmail(String email);
-    boolean existsById(Long id);
-
+    Optional<Instructor> findByEmail(final String email);
+    boolean existsById(final Long id);
 }

@@ -16,7 +16,7 @@ public interface AuthenticationService {
      *
      * @param signUpRequestDTO the sign-up request data containing user information
      */
-    void register(SignUpRequestDTO signUpRequestDTO);
+    void register(final SignUpRequestDTO signUpRequestDTO);
 
     /**
      * Authenticates a user with the provided login request data and returns a JWT token.
@@ -25,7 +25,7 @@ public interface AuthenticationService {
      * @param request         the HTTP servlet request
      * @return a JWT token for the authenticated user
      */
-    JWTTokenDTO login(LoginRequestDTO loginRequestDTO, HttpServletRequest request);
+    JWTTokenDTO login(final LoginRequestDTO loginRequestDTO, final HttpServletRequest request);
 
     /**
      * Refreshes an expired JWT token with the provided refresh token data and returns a new JWT token.
@@ -34,5 +34,5 @@ public interface AuthenticationService {
      * @param request       the HTTP servlet request
      * @return a new JWT token for the refreshed user session
      */
-    JWTTokenDTO refresh(JWTRefreshDTO jwtRefreshDTO, HttpServletRequest request);
+    JWTTokenDTO refresh(final JWTRefreshDTO jwtRefreshDTO, final HttpServletRequest request);
 }

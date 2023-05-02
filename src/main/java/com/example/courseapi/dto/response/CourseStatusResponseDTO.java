@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
+
 /**
  * A DTO for the {@link com.example.courseapi.domain.Course} entity.
  */
@@ -15,6 +17,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class CourseStatusResponseDTO extends CourseResponseDTO {
+    @Serial
+    private static final long serialVersionUID = -6547399590510231307L;
 
     private CourseStatus courseStatus;
     private Double finalGrade;

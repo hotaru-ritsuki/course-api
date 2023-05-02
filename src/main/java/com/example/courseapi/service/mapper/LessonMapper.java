@@ -15,16 +15,16 @@ import org.springframework.stereotype.Component;
 public interface LessonMapper extends EntityMapper<LessonRequestDTO, LessonResponseDTO, Lesson> {
 
     @Mapping(source = "course.id", target = "courseId")
-    LessonResponseDTO toResponseDto(Lesson lesson);
+    LessonResponseDTO toResponseDto(final Lesson lesson);
 
     @Mapping(source = "courseId", target = "course.id")
-    Lesson fromResponseDto(LessonResponseDTO lessonResponseDTO);
+    Lesson fromResponseDto(final LessonResponseDTO lessonResponseDTO);
 
     @Mapping(source = "course.id", target = "courseId")
-    LessonRequestDTO toRequestDto(Lesson lesson);
+    LessonRequestDTO toRequestDto(final Lesson lesson);
 
     @Mapping(source = "courseId", target = "course.id")
-    Lesson fromRequestDto(LessonRequestDTO lessonRequestDTO);
+    Lesson fromRequestDto(final LessonRequestDTO lessonRequestDTO);
 
     default Lesson fromId(Long id) {
         if (id == null) {

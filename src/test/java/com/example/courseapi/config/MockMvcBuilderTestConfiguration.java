@@ -2,14 +2,8 @@ package com.example.courseapi.config;
 
 import com.example.courseapi.config.args.resolver.DefaultFiltersArgumentResolver;
 import com.example.courseapi.controller.ExceptionTranslator;
-import com.example.courseapi.security.filters.JwtAuthenticationFilter;
-import com.example.courseapi.security.service.JwtService;
 import jakarta.servlet.Filter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar;
 import org.springframework.format.support.DefaultFormattingConversionService;

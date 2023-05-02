@@ -9,18 +9,11 @@ import java.util.List;
 
 @Repository
 public interface CourseRepository extends JpaRepository<Course, Long>, JpaSpecificationExecutor<Course> {
-    List<Course> findByStudentsId(Long studentId);
-
-    List<Course> findByTitleContaining(String title);
-
-    List<Course> findByDescriptionContaining(String description);
-
-    boolean existsByIdAndStudentsId(Long courseId, Long studentId);
-
-    boolean existsByIdAndInstructorsId(Long courseId, Long studentId);
-
-    boolean existsByLessonsIdAndStudentsId(Long lessonId, Long studentId);
-
-
-    boolean existsByLessonsIdAndInstructorsId(Long lessonId, Long studentId);
+    List<Course> findByStudentsId(final Long studentId);
+    List<Course> findByTitleContaining(final String title);
+    List<Course> findByDescriptionContaining(final String description);
+    boolean existsByIdAndStudentsId(final Long courseId, final Long studentId);
+    boolean existsByIdAndInstructorsId(final Long courseId, final Long studentId);
+    boolean existsByLessonsIdAndStudentsId(final Long lessonId, final Long studentId);
+    boolean existsByLessonsIdAndInstructorsId(final Long lessonId, final Long studentId);
 }

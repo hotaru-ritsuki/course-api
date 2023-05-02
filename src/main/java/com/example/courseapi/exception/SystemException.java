@@ -10,7 +10,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class SystemException extends RuntimeException {
-
     @Serial
     private static final long serialVersionUID = 7153808129776996908L;
 

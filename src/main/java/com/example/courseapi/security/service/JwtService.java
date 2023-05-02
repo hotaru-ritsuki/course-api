@@ -17,7 +17,7 @@ public interface JwtService {
      * @param jwtToken the JWT token
      * @return the username extracted from the token
      */
-    String extractUsername(String jwtToken);
+    String extractUsername(final String jwtToken);
 
     /**
      * Generates a JWT token for the given user details.
@@ -26,7 +26,7 @@ public interface JwtService {
      * @param isAccessToken a boolean flag indicating whether the token is an access token or not
      * @return the generated JWT token
      */
-    String generateJwtToken(UserDetails userDetails, boolean isAccessToken);
+    String generateJwtToken(final UserDetails userDetails, final boolean isAccessToken);
 
     /**
      * Generates a JWT token for the given user details and extra claims.
@@ -36,7 +36,8 @@ public interface JwtService {
      * @param isAccessToken a boolean flag indicating whether the token is an access token or not
      * @return the generated JWT token with extra claims
      */
-    String generateJwtToken(UserDetails userDetails, Map<String, Object> extraClaims, boolean isAccessToken);
+    String generateJwtToken(
+            final UserDetails userDetails, final Map<String, Object> extraClaims, final boolean isAccessToken);
 
     /**
      * Validates a JWT token for the given user details.
@@ -45,7 +46,7 @@ public interface JwtService {
      * @param userDetails the user details object containing user information
      * @return true if the token is valid for the user, false otherwise
      */
-    boolean isJwtTokenValid(String jwtToken, UserDetails userDetails);
+    boolean isJwtTokenValid(final String jwtToken, final UserDetails userDetails);
 
     /**
      * Extracts a specific claim from a JWT token using a resolver function.
@@ -55,5 +56,5 @@ public interface JwtService {
      * @param <T>            the type of the claim value
      * @return the extracted claim value
      */
-    <T> T extractClaim(String token, Function<Claims, T> claimsResolver);
+    <T> T extractClaim(final String token, final Function<Claims, T> claimsResolver);
 }

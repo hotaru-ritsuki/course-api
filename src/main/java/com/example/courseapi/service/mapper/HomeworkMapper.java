@@ -16,20 +16,20 @@ public interface HomeworkMapper extends EntityMapper<HomeworkRequestDTO, Homewor
 
     @Mapping(source = "lesson.id", target = "lessonId")
     @Mapping(source = "student.id", target = "studentId")
-    HomeworkResponseDTO toResponseDto(Homework homework);
+    HomeworkResponseDTO toResponseDto(final Homework homework);
 
     @Mapping(source = "lessonId", target = "lesson.id")
     @Mapping(source = "studentId", target = "student.id")
-    Homework fromResponseDto(HomeworkResponseDTO homeworkResponseDTO);
+    Homework fromResponseDto(final HomeworkResponseDTO homeworkResponseDTO);
 
 
     @Mapping(source = "lesson.id", target = "lessonId")
     @Mapping(source = "student.id", target = "studentId")
-    HomeworkRequestDTO toRequestDto(Homework homework);
+    HomeworkRequestDTO toRequestDto(final Homework homework);
 
     @Mapping(source = "lessonId", target = "lesson.id")
     @Mapping(source = "studentId", target = "student.id")
-    Homework fromRequestDto(HomeworkRequestDTO homeworkRequestDTO);
+    Homework fromRequestDto(final HomeworkRequestDTO homeworkRequestDTO);
 
     default Homework fromId(Long id) {
         if (id == null) {
