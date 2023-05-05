@@ -11,7 +11,7 @@ on:
       - 'Dockerrun.aws.json'
       
 env:
-  SHORT_SHA: "${{ github.sha.slice(0,7) }}"
+  SHORT_SHA: ${{ github.sha.slice(0,7) }}
   VERSION: "0.1.${{ github.run_number }}"
   BUILD_NUMBER: "${{ env.VERSION }}-${{ env.SHORT_SHA }}"
 
