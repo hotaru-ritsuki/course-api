@@ -7,7 +7,7 @@ on:
       - main
       
 env:
-      BUILD_NUMBER: "0.1.${GITHUB_RUN_NUMBER}"
+      BUILD_NUMBER: "0.1.${{github.run_number}}"
 
 jobs:
   deploy:
