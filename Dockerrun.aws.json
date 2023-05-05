@@ -1,0 +1,23 @@
+{
+  "AWSEBDockerrunVersion": 2,
+  "containerDefinitions": [
+    {
+      "name": "course-api",
+      "image": "hotaruritsuki/course-api:latest",
+      "essential": true,
+      "memory": 512,
+      "portMappings": [
+        {
+          "hostPort": 80,
+          "containerPort": 8080
+        }
+      ],
+      "environment": [
+        {
+          "name": "SPRING_DATASOURCE_URL",
+          "value": "jdbc:postgresql://awseb-e-grep9hnhnp-stack-awsebrdsdatabase-4efhclvse1qt.chwhxzje1oh2.eu-central-1.rds.amazonaws.com:5432/courseplatform"
+        }
+      ]
+    }
+  ]
+}
