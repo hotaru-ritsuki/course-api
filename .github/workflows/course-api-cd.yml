@@ -73,9 +73,8 @@ jobs:
       - name: Push commit with Dockerrun.aws.json
         uses: ad-m/github-push-action@master
         with:
-          atomic: false
           force: true
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.PAT }}
           tags: true
           branch: ${{ github.ref }}
         
