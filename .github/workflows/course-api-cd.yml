@@ -68,9 +68,10 @@ jobs:
           git add Dockerrun.aws.json
           git commit -m "Update Dockerrun.aws.json docker image with new tag ${{ env.BUILD_NUMBER }}"
           git tag ${{ env.BUILD_NUMBER }}
-      - name: Push Dockerrun.aws.json
+      - name: Push commit with Dockerrun.aws.json
         uses: ad-m/github-push-action@master
         with:
+          force: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
           tags: true
           branch: ${{ github.ref }}
