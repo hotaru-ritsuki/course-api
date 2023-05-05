@@ -29,6 +29,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          persist-credentials: false
       - uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
@@ -59,11 +61,19 @@ jobs:
           version_description: ${{ github.SHA }}
           region: ${{ secrets.EB_REGION }}
           deployment_package: Dockerrun.aws.json
-      - name: Commit and push Dockerrun.aws.json
+      - name: Commit Dockerrun.aws.json
         run: |
-          echo "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com"
-          git config user.name "${GITHUB_ACTOR}"
-          git config user.email "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com"
+          git config user.name github-actions
+          git config user.email github-actions@github.com
           git add Dockerrun.aws.json
           git commit -m "Update Dockerrun.aws.json docker image with new tag ${{ env.BUILD_NUMBER }}"
-          git push -f
+          git tag -d ${{ env.BUILD_NUMBER }}
+          git tag ${{ env.BUILD_NUMBER }}
+      - name: Push Dockerrun.aws.json
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tags: true
+          branch: ${{ github.ref }}
+        
+        
