@@ -15,7 +15,31 @@
       "environment": [
         {
           "name": "SPRING_DATASOURCE_URL",
-          "value": "jdbc:postgresql://awseb-e-grep9hnhnp-stack-awsebrdsdatabase-4efhclvse1qt.chwhxzje1oh2.eu-central-1.rds.amazonaws.com:5432/courseplatform"
+          "value": "${SPRING_DATASOURCE_URL}"
+        },
+        {
+          "name": "SPRING_DATASOURCE_USERNAME",
+          "value": "${SPRING_DATASOURCE_USERNAME}"
+        },
+        {
+          "name": "SPRING_DATASOURCE_PASSWORD",
+          "value": "${SPRING_DATASOURCE_PASSWORD}"
+        },
+        {
+          "name": "APPLICATION_URL",
+          "value": "${APPLICATION_URL}"
+        },
+        {
+          "name": "SECURITY_JWT_ACCESS_TOKEN_EXPIRATION",
+          "value": "${SECURITY_JWT_ACCESS_TOKEN_EXPIRATION}"
+        },
+        {
+          "name": "SECURITY_JWT_REFRESH_TOKEN_EXPIRATION",
+          "value": "${SECURITY_JWT_REFRESH_TOKEN_EXPIRATION}"
+        },
+        {
+          "name": "SECURITY_JWT_SIGNING_KEY",
+          "value": "${SECURITY_JWT_SIGNING_KEY}"
         }
       ]
     }
