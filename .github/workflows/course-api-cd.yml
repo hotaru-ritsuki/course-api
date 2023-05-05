@@ -5,11 +5,12 @@ on:
   push:
     branches:
       - main
+      
+env:
+      BUILD_NUMBER: "0.1.${GITHUB_RUN_NUMBER}"
 
 jobs:
   deploy:
-    env:
-      BUILD_NUMBER: "0.1.${GITHUB_RUN_NUMBER}"
     runs-on: ubuntu-latest
     services:
       postgres:
