@@ -11,7 +11,7 @@ on:
       - 'Dockerrun.aws.json'
       
 env:
-      BUILD_NUMBER: "0.1.${{github.run_number}}-${GITHUB_SHA::7}"
+      BUILD_NUMBER: "0.1.${{github.run_number}}-${{github.sha::7}}"
 
 jobs:
   deploy:
