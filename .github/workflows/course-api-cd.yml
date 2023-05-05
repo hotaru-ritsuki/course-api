@@ -15,12 +15,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: webfactory/ssh-agent@v0.8.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_GITHUB_KEY }}
       - uses: actions/checkout@v3
         with:
-          ssh-key: ${{ secrets.SSH_GITHUB_KEY }}
           fetch-depth: 0
           persist-credentials: true
       - uses: actions/setup-java@v3
@@ -65,7 +61,6 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           atomic: false
-          ssh: true
           force: true
           tags: true
           branch: ${{ github.ref }}
