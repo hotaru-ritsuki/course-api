@@ -39,12 +39,12 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
       - name: Build Package Push with Maven
-        run: mvn -ntp -B verify -Ddocker.image.tag=${{env.BUILD_NUMBER}} jib:build
-      - name: Update Dockerrun.aws.json api image tag with new build number
+        run: mvn -ntp -B verify -Ddocker.image.tag=${BUILD_NUMBER} jib:build
+      - name: Update Dockerrun.aws.json api image tag with new build number ${BUILD_NUMBER}
         run: |
           echo "Dockerrun.aws.json before updating tag"
           cat Dockerrun.aws.json
-          sed -i -E 's_(hotaruritsuki/course-api:)([^"]*)_\1'${{env.BUILD_NUMBER}}'_' Dockerrun.aws.json
+          sed -i -E 's_(hotaruritsuki/course-api:)([^"]*)_\1'${BUILD_NUMBER}'_' Dockerrun.aws.json
           echo "Dockerrun.aws.json after updating tag"
           cat Dockerrun.aws.json
       - name: Deploy to Elastic Beanstalk
@@ -54,7 +54,7 @@ jobs:
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           application_name: ${{ secrets.EB_APPLICATION_NAME }}
           environment_name: ${{ secrets.EB_ENVIRONMENT_NAME }}
-          version_label: ${{ env.BUILD_NUMBER }}
+          version_label: ${BUILD_NUMBER}
           version_description: ${{ github.SHA }}
           region: ${{ secrets.EB_REGION }}
           deployment_package: Dockerrun.aws.json
@@ -63,5 +63,5 @@ jobs:
           git config user.name github-actions
           git config user.email github-actions@github.com
           git add Dockerrun.aws.json
-          git commit -m "Update Dockerrun.aws.json docker image with new tag ${{ env.BUILD_NUMBER }}"
+          git commit -m "Update Dockerrun.aws.json docker image with new tag ${BUILD_NUMBER}"
           git push
