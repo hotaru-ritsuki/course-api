@@ -14,21 +14,6 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:14.1
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: courseplatform
-        ports:
-          - 5432:5432
-        options:
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v3
         with:
@@ -70,6 +55,7 @@ jobs:
           git add Dockerrun.aws.json
           git commit -m "Update Dockerrun.aws.json docker image with new tag ${{ env.BUILD_NUMBER }}"
           git tag ${{ env.BUILD_NUMBER }}
+          echo ${{ secrets.PAT }}
       - name: Push commit with Dockerrun.aws.json
         uses: ad-m/github-push-action@master
         with:
