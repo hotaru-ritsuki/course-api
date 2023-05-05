@@ -20,10 +20,12 @@ jobs:
           token: ${{ secrets.PAT }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Set short SHA environment variable
+      - name: Set short SHA and version environment variables
         run: |
           echo "SHORT_SHA=`echo ${{ github.sha }} | cut -c1-8`" >> $GITHUB_ENV
           echo "VERSION=`echo 0.1.${{ github.run_number }}`" >> $GITHUB_ENV
+      - name: Set build number environment variable
+        run: |
           echo "BUILD_NUMBER=`echo ${{ env.VERSION }}-${{ env.SHORT_SHA }}`" # >> $GITHUB_ENV
 #      - uses: actions/setup-java@v3
 #        with:
