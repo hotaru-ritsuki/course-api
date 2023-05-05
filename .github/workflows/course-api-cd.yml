@@ -9,21 +9,22 @@ on:
       - main
     paths-ignore:
       - 'Dockerrun.aws.json'
-      
-env:
-  SHORT_SHA: ${{ github.sha.slice(0,7) }}
-  VERSION: "0.1.${{ github.run_number }}"
-  BUILD_NUMBER: "${{ env.VERSION }}-${{ env.SHORT_SHA }}"
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: "Checkout branch/tag"
+        uses: actions/checkout@v3
         with:
           token: ${{ secrets.PAT }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Set short SHA environment variable
+        run: |
+          echo "SHORT_SHA=${{ github.sha }} | cut -c1-7" >> $GITHUB_ENV
+          echo 'VERSION="0.1.${{ github.run_number }}"' >> $GITHUB_ENV
+          echo 'BUILD_NUMBER="${{ env.VERSION }}-${{ env.SHORT_SHA }}"' >> $GITHUB_ENV
       - uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
