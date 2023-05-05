@@ -4,16 +4,29 @@ services:
     image: postgres:14.1
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: courseplatform
       PGDATA: /data/postgres
     volumes:
       - db:/data/postgres
     ports:
-      - "5332:5432"
+      - "5433:5432"
     networks:
       - db
     restart: unless-stopped
-
+  course-api:
+    container_name: course-api
+    image: hotaruritsuki/course-api
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/courseplatform
+    ports:
+      - "8088:8080"
+    networks:
+      - db
+    depends_on:
+      - db
+    restart: unless-stopped
+#    command:
 networks:
   db:
     driver: bridge
