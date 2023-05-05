@@ -9,7 +9,7 @@ on:
 jobs:
   deploy:
     env:
-      BUILD_NUMBER: "0.1.${{env.GITHUB_RUN_NUMBER}}"
+      BUILD_NUMBER: "0.1.${GITHUB_RUN_NUMBER}"
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -58,7 +58,6 @@ jobs:
           version_description: ${{ github.SHA }}
           region: ${{ secrets.EB_REGION }}
           deployment_package: Dockerrun.aws.json
-          wait_for_deployment: false
       - name: Commit and push Dockerrun.aws.json
         run: |
           git config user.name github-actions
