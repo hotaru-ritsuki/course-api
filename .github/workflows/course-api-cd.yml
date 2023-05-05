@@ -22,53 +22,51 @@ jobs:
           persist-credentials: false
       - name: Set short SHA environment variable
         run: |
-          echo "SHORT_SHA=${{ github.sha }} | cut -c1-7" >> $GITHUB_ENV
-          echo 'VERSION="0.1.${{ github.run_number }}"' >> $GITHUB_ENV
-          echo 'BUILD_NUMBER="${{ env.VERSION }}-${{ env.SHORT_SHA }}"' >> $GITHUB_ENV
-      - uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'maven'
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-      - name: Build Package Push with Maven version ${{ env.BUILD_NUMBER }}
-        run: mvn -ntp -B clean compile -DskipTests=true -Ddocker.image.tag=${{ env.BUILD_NUMBER }} jib:build
-      - name: Update Dockerrun.aws.json api image tag with new build number ${{ env.BUILD_NUMBER }}
-        run: |
-          echo "Dockerrun.aws.json before updating tag"
-          cat Dockerrun.aws.json
-          sed -i -E 's_(hotaruritsuki/course-api:)([^"]*)_\1'${{ env.BUILD_NUMBER }}'_' Dockerrun.aws.json
-          echo "Dockerrun.aws.json after updating tag"
-          cat Dockerrun.aws.json
-      - name: Deploy to Elastic Beanstalk
-        uses: einaregilsson/beanstalk-deploy@v21
-        with:
-          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          application_name: ${{ secrets.EB_APPLICATION_NAME }}
-          environment_name: ${{ secrets.EB_ENVIRONMENT_NAME }}
-          version_label: ${{ env.BUILD_NUMBER }}
-          version_description: ${{ github.SHA }}
-          region: ${{ secrets.EB_REGION }}
-          deployment_package: Dockerrun.aws.json
-      - name: Commit Dockerrun.aws.json
-        run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add Dockerrun.aws.json
-          git commit -m "Update Dockerrun.aws.json docker image with new tag ${{ env.BUILD_NUMBER }}"
-          git tag ${{ env.BUILD_NUMBER }}
-      - name: Push commit with Dockerrun.aws.json
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.PAT }}
-          atomic: false
-          force: true
-          tags: true
-          branch: ${{ github.ref }}
-        
-        
+          echo "SHORT_SHA=${{ github.sha }} | cut -c1-7" # >> $GITHUB_ENV
+          echo 'VERSION="0.1.${{ github.run_number }}"' # >> $GITHUB_ENV
+          echo 'BUILD_NUMBER="${{ env.VERSION }}-${{ env.SHORT_SHA }}"' # >> $GITHUB_ENV
+#      - uses: actions/setup-java@v3
+#        with:
+#          distribution: 'temurin'
+#          java-version: '17'
+#          cache: 'maven'
+#      - name: Login to Docker Hub
+#        uses: docker/login-action@v2
+#        with:
+#          username: ${{ secrets.DOCKERHUB_USERNAME }}
+#          password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+#      - name: Build Package Push with Maven version ${{ env.BUILD_NUMBER }}
+#        run: mvn -ntp -B clean compile -DskipTests=true -Ddocker.image.tag=${{ env.BUILD_NUMBER }} jib:build
+#      - name: Update Dockerrun.aws.json api image tag with new build number ${{ env.BUILD_NUMBER }}
+#        run: |
+#          echo "Dockerrun.aws.json before updating tag"
+#          cat Dockerrun.aws.json
+#          sed -i -E 's_(hotaruritsuki/course-api:)([^"]*)_\1'${{ env.BUILD_NUMBER }}'_' Dockerrun.aws.json
+#          echo "Dockerrun.aws.json after updating tag"
+#          cat Dockerrun.aws.json
+#      - name: Deploy to Elastic Beanstalk
+#        uses: einaregilsson/beanstalk-deploy@v21
+#        with:
+#          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#          application_name: ${{ secrets.EB_APPLICATION_NAME }}
+#          environment_name: ${{ secrets.EB_ENVIRONMENT_NAME }}
+#          version_label: ${{ env.BUILD_NUMBER }}
+#          version_description: ${{ github.SHA }}
+#          region: ${{ secrets.EB_REGION }}
+#          deployment_package: Dockerrun.aws.json
+#      - name: Commit Dockerrun.aws.json
+#        run: |
+#          git config user.name github-actions
+#          git config user.email github-actions@github.com
+#          git add Dockerrun.aws.json
+#          git commit -m "Update Dockerrun.aws.json docker image with new tag ${{ env.BUILD_NUMBER }}"
+#          git tag ${{ env.BUILD_NUMBER }}
+#      - name: Push commit with Dockerrun.aws.json
+#        uses: ad-m/github-push-action@master
+#        with:
+#          github_token: ${{ secrets.PAT }}
+#          atomic: false
+#          force: true
+#          tags: true
+#          branch: ${{ github.ref }}
