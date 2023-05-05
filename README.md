@@ -36,7 +36,7 @@ To build and run this project, you'll need the following tools:
 
    ```
    spring.datasource.url=jdbc:postgresql://localhost:5432/your_database
-   spring.datasource.username=your_username
+   spring.datasource.username=your_usernamee
    spring.datasource.password=your_password
    ```
 
