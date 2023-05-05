@@ -9,7 +9,7 @@ on:
       - main
       
 env:
-      BUILD_NUMBER: "0.1.${{github.run_number}}"
+      BUILD_NUMBER: "0.1.${{github.run_number}}-${GITHUB_SHA::7}"
 
 jobs:
   deploy:
