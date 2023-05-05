@@ -1,5 +1,7 @@
 name: CD - Deploy Course API Backend
 
+permissions: write-all
+
 on:
   workflow_dispatch:
   push:
