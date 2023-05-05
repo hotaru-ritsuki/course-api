@@ -40,8 +40,8 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
       - name: Build Package Push with Maven
-        run: mvn -ntp -B verify -Ddocker.image.tag=${BUILD_NUMBER} jib:build
-      - name: Update Dockerrun.aws.json api image tag with new build number ${BUILD_NUMBER}
+        run: mvn -ntp -B -Ddocker.image.tag=${BUILD_NUMBER} jib:build
+      - name: Update Dockerrun.aws.json api image tag with new build number ${{ env.BUILD_NUMBER }}
         run: |
           echo "Dockerrun.aws.json before updating tag"
           cat Dockerrun.aws.json
