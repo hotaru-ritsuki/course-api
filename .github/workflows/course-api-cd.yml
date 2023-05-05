@@ -44,7 +44,7 @@ jobs:
         run: |
           echo "Dockerrun.aws.json before updating tag"
           cat Dockerrun.aws.json
-          sed -i -E 's_(hotaruritsuki/course-api:)([^"]*)_\1'123456789'_' Dockerrun.aws.json
+          sed -i -E 's_(hotaruritsuki/course-api:)([^"]*)_\1'${{env.BUILD_NUMBER}}'_' Dockerrun.aws.json
           echo "Dockerrun.aws.json after updating tag"
           cat Dockerrun.aws.json
       - name: Deploy to Elastic Beanstalk
@@ -58,6 +58,7 @@ jobs:
           version_description: ${{ github.SHA }}
           region: ${{ secrets.EB_REGION }}
           deployment_package: Dockerrun.aws.json
+          wait_for_deployment: false
       - name: Commit and push Dockerrun.aws.json
         run: |
           git config user.name github-actions
