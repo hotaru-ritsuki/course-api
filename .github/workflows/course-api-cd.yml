@@ -22,8 +22,8 @@ jobs:
           persist-credentials: false
       - name: Set short SHA environment variable
         run: |
-          echo 'SHORT_SHA="${{ github.sha }} | cut -c1-7" # >> $GITHUB_ENV
-          echo 'VERSION="0.1.${{ github.run_number }}"' # >> $GITHUB_ENV
+          echo 'SHORT_SHA="${{ github.sha }} | cut -c1-7" >> $GITHUB_ENV
+          echo 'VERSION="0.1.${{ github.run_number }}"' >> $GITHUB_ENV
           echo 'BUILD_NUMBER="${{ env.VERSION }}-${{ env.SHORT_SHA }}"' # >> $GITHUB_ENV
 #      - uses: actions/setup-java@v3
 #        with:
