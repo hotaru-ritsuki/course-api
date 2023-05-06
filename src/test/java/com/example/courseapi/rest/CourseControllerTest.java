@@ -1,6 +1,7 @@
 package com.example.courseapi.rest;
 
 import com.example.courseapi.config.MockMvcBuilderTestConfiguration;
+import com.example.courseapi.config.PostgresTestContainer;
 import com.example.courseapi.config.annotation.CustomMockAdmin;
 import com.example.courseapi.config.annotation.CustomMockInstructor;
 import com.example.courseapi.config.annotation.CustomMockStudent;
@@ -44,7 +45,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @DefaultTestConfiguration
-class CourseControllerTest {
+class CourseControllerTest extends PostgresTestContainer {
     private static final String DEFAULT_TITLE = "COURSE_A_TITLE";
     private static final String DEFAULT_DESCRIPTION = "COURSE_A_DESCRIPTION";
     private static final String UPDATED_TITLE = "COURSE_B_TITLE";

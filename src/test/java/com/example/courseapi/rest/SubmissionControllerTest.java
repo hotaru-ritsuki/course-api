@@ -1,6 +1,7 @@
 package com.example.courseapi.rest;
 
 import com.example.courseapi.config.MockMvcBuilderTestConfiguration;
+import com.example.courseapi.config.PostgresTestContainer;
 import com.example.courseapi.config.annotation.CustomMockAdmin;
 import com.example.courseapi.config.annotation.CustomMockInstructor;
 import com.example.courseapi.config.annotation.DefaultTestConfiguration;
@@ -37,7 +38,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @DefaultTestConfiguration
-class SubmissionControllerTest {
+class SubmissionControllerTest extends PostgresTestContainer {
 
     @PersistenceContext
     private EntityManager entityManager;

@@ -1,5 +1,6 @@
 package com.example.courseapi.repository;
 
+import com.example.courseapi.config.PostgresRepositoryTestContainer;
 import com.example.courseapi.config.annotation.DefaultJPARepositoryTestConfiguration;
 import com.example.courseapi.domain.Student;
 import com.example.courseapi.domain.enums.Roles;
@@ -11,6 +12,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SuppressWarnings("unused")
 @DefaultJPARepositoryTestConfiguration
-public class StudentRepositoryTest {
+public class StudentRepositoryTest extends PostgresRepositoryTestContainer {
 
     @Autowired
     private TestEntityManager entityManager;
@@ -39,6 +41,7 @@ public class StudentRepositoryTest {
         this.closable = MockitoAnnotations.openMocks(this);
     }
 
+    @Transactional
     @Test
     public void should_find_no_students_if_repository_is_empty() {
         List<Student> students = studentRepository.findAll();
@@ -59,6 +62,7 @@ public class StudentRepositoryTest {
         assertThat(student).hasFieldOrPropertyWithValue("role", Roles.STUDENT);
     }
 
+    @Transactional
     @Test
     public void should_find_all_students() {
         Student student1 = entityManager.persist(
@@ -79,6 +83,7 @@ public class StudentRepositoryTest {
                 .contains(student1, student2, student3);
     }
 
+    @Transactional
     @Test
     public void should_find_student_by_id() {
         Student student1 = entityManager.persist(
@@ -96,6 +101,7 @@ public class StudentRepositoryTest {
         assertThat(foundStudent).isEqualTo(student2);
     }
 
+    @Transactional
     @Test
     public void should_find_student_by_email() {
         Student student1 = studentRepository.save(
@@ -113,6 +119,7 @@ public class StudentRepositoryTest {
         assertThat(foundStudent).isEqualTo(student1);
     }
 
+    @Transactional
     @Test
     public void should_update_student_by_id() {
         Student student1 = entityManager.persist(
@@ -148,6 +155,7 @@ public class StudentRepositoryTest {
         assertThat(checkStudent.getPassword()).isEqualTo(student.getPassword());
     }
 
+    @Transactional
     @Test
     public void should_delete_student_by_id() {
         Student student1 = entityManager.persist(
@@ -169,6 +177,7 @@ public class StudentRepositoryTest {
         assertThat(students).hasSize(2).contains(student1, student3);
     }
 
+    @Transactional
     @Test
     public void should_delete_all_students() {
         Student student1 = entityManager.persist(

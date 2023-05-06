@@ -1,5 +1,6 @@
 package com.example.courseapi.repository;
 
+import com.example.courseapi.config.PostgresRepositoryTestContainer;
 import com.example.courseapi.config.annotation.DefaultJPARepositoryTestConfiguration;
 import com.example.courseapi.domain.Instructor;
 import com.example.courseapi.domain.enums.Roles;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SuppressWarnings("unused")
 @DefaultJPARepositoryTestConfiguration
-public class InstructorRepositoryTest {
+public class InstructorRepositoryTest extends PostgresRepositoryTestContainer {
     @Autowired
     private TestEntityManager entityManager;
 
@@ -36,6 +38,7 @@ public class InstructorRepositoryTest {
     public void setup() {
         this.closable = MockitoAnnotations.openMocks(this);
     }
+    @Transactional
     @Test
     public void should_find_no_instructors_if_repository_is_empty() {
         List<Instructor> instructors = instructorRepository.findAll();
@@ -43,6 +46,7 @@ public class InstructorRepositoryTest {
         assertThat(instructors).isEmpty();
     }
 
+    @Transactional
     @Test
     public void should_store_a_instructor() {
         Instructor instructor = instructorRepository.save(
@@ -55,6 +59,7 @@ public class InstructorRepositoryTest {
         assertThat(instructor).hasFieldOrPropertyWithValue("role", Roles.INSTRUCTOR);
     }
 
+    @Transactional
     @Test
     public void should_find_all_instructors() {
         Instructor instructor1 = entityManager.persist(
@@ -75,6 +80,7 @@ public class InstructorRepositoryTest {
                 .contains(instructor1, instructor2, instructor3);
     }
 
+    @Transactional
     @Test
     public void should_find_instructor_by_id() {
         Instructor instructor1 = entityManager.persist(
@@ -92,6 +98,7 @@ public class InstructorRepositoryTest {
         assertThat(foundInstructor).isEqualTo(instructor2);
     }
 
+    @Transactional
     @Test
     public void should_find_instructor_by_email() {
         Instructor instructor1 = entityManager.persist(
@@ -109,6 +116,7 @@ public class InstructorRepositoryTest {
         assertThat(foundInstructor).isEqualTo(instructor1);
     }
 
+    @Transactional
     @Test
     public void should_update_instructor_by_id() {
         Instructor instructor1 = entityManager.persist(
@@ -144,6 +152,7 @@ public class InstructorRepositoryTest {
         assertThat(checkInstructor.getPassword()).isEqualTo(instructor.getPassword());
     }
 
+    @Transactional
     @Test
     public void should_delete_instructor_by_id() {
         Instructor instructor1 = entityManager.persist(
@@ -165,6 +174,7 @@ public class InstructorRepositoryTest {
         assertThat(instructors).hasSize(2).contains(instructor1, instructor3);
     }
 
+    @Transactional
     @Test
     public void should_delete_all_instructors() {
         Instructor instructor1 = entityManager.persist(

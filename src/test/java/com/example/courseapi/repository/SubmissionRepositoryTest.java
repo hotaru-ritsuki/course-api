@@ -1,5 +1,6 @@
 package com.example.courseapi.repository;
 
+import com.example.courseapi.config.PostgresRepositoryTestContainer;
 import com.example.courseapi.config.annotation.DefaultJPARepositoryTestConfiguration;
 import com.example.courseapi.domain.*;
 import com.example.courseapi.util.EntityCreatorUtil;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -16,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SuppressWarnings("unused")
 @DefaultJPARepositoryTestConfiguration
-public class SubmissionRepositoryTest {
+public class SubmissionRepositoryTest extends PostgresRepositoryTestContainer {
 
     @Autowired
     private TestEntityManager entityManager;
@@ -52,6 +54,7 @@ public class SubmissionRepositoryTest {
         this.instructor = instructorSet;
     }
 
+    @Transactional
     @Test
     public void should_find_no_submissions_if_repository_is_empty() {
         List<Submission> submissions = submissionRepository.findAll();
@@ -59,6 +62,7 @@ public class SubmissionRepositoryTest {
         assertThat(submissions).isEmpty();
     }
 
+    @Transactional
     @Test
     public void should_store_a_submission() {
         Course course = courseRepository.save(EntityCreatorUtil.createCourse("1", instructor));
@@ -72,6 +76,7 @@ public class SubmissionRepositoryTest {
         assertThat(submission).hasFieldOrPropertyWithValue("student", student);
     }
 
+    @Transactional
     @Test
     public void should_find_all_submissions() {
         Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
@@ -101,6 +106,7 @@ public class SubmissionRepositoryTest {
                 .contains(submission1, submission2, submission3);
     }
 
+    @Transactional
     @Test
     public void should_find_submission_by_id() {
         Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
@@ -125,6 +131,7 @@ public class SubmissionRepositoryTest {
         assertThat(foundSubmission).isEqualTo(submission2);
     }
 
+    @Transactional
     @Test
     public void should_find_submissions_by_student() {
         Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
@@ -153,6 +160,7 @@ public class SubmissionRepositoryTest {
         assertThat(submissions).hasSize(2).contains(submission2, submission3);
     }
 
+    @Transactional
     @Test
     public void should_find_submissions_by_lesson() {
         Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
@@ -179,6 +187,7 @@ public class SubmissionRepositoryTest {
         assertThat(submissions).hasSize(2).contains(submission1, submission3);
     }
 
+    @Transactional
     @Test
     public void should_update_submission_by_id() {
         Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
@@ -214,6 +223,7 @@ public class SubmissionRepositoryTest {
         assertThat(checkSubmission.getGrade()).isEqualTo(submission.getGrade());
     }
 
+    @Transactional
     @Test
     public void should_delete_submission_by_id() {
         Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
@@ -245,6 +255,7 @@ public class SubmissionRepositoryTest {
         assertThat(submissions).hasSize(2).contains(submission1, submission3);
     }
 
+    @Transactional
     @Test
     public void should_delete_all_submissions() {
         Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));

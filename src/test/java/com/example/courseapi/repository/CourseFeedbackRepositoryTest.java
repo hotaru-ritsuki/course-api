@@ -1,6 +1,7 @@
 package com.example.courseapi.repository;
 
 
+import com.example.courseapi.config.PostgresRepositoryTestContainer;
 import com.example.courseapi.config.annotation.DefaultJPARepositoryTestConfiguration;
 import com.example.courseapi.domain.Course;
 import com.example.courseapi.domain.CourseFeedback;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -24,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SuppressWarnings("unused")
 @DefaultJPARepositoryTestConfiguration
-public class CourseFeedbackRepositoryTest {
+public class CourseFeedbackRepositoryTest extends PostgresRepositoryTestContainer {
     
     @Autowired
     private TestEntityManager entityManager;
@@ -57,6 +59,7 @@ public class CourseFeedbackRepositoryTest {
         this.instructors = instructorSet;
     }
 
+    @Transactional
     @Test
     public void should_find_no_course_feedbacks_if_repository_is_empty() {
         List<CourseFeedback> courseFeedbacks = courseFeedbackRepository.findAll();
@@ -64,6 +67,7 @@ public class CourseFeedbackRepositoryTest {
         assertThat(courseFeedbacks).isEmpty();
     }
 
+    @Transactional
     @Test
     public void should_store_a_course_feedback() {
         Student student = userRepository.save(EntityCreatorUtil.createStudent("1"));
@@ -78,6 +82,7 @@ public class CourseFeedbackRepositoryTest {
         assertThat(courseFeedback).hasFieldOrPropertyWithValue("course", course);
     }
 
+    @Transactional
     @Test
     public void should_find_all_course_feedbacks() {
         Student student1 = entityManager.persist(EntityCreatorUtil.createStudent("1"));
@@ -107,6 +112,7 @@ public class CourseFeedbackRepositoryTest {
                 .contains(courseFeedback1, courseFeedback2, courseFeedback3);
     }
 
+    @Transactional
     @Test
     public void should_find_course_feedback_by_id() {
         Student student1 = entityManager.persist(EntityCreatorUtil.createStudent("1"));
@@ -130,6 +136,7 @@ public class CourseFeedbackRepositoryTest {
         assertThat(foundCoursefeedback).isEqualTo(courseFeedback2);
     }
 
+    @Transactional
     @Test
     public void should_find_course_feedbacks_by_feedback_containing_string() {
         Student student1 = entityManager.persist(EntityCreatorUtil.createStudent("1"));
@@ -162,6 +169,7 @@ public class CourseFeedbackRepositoryTest {
         assertThat(courseFeedbacks).hasSize(2).contains(courseFeedback2, courseFeedback3);
     }
 
+    @Transactional
     @Test
     public void should_update_course_feedback_by_id() {
         Student student1 = entityManager.persist(EntityCreatorUtil.createStudent("1"));
@@ -194,6 +202,7 @@ public class CourseFeedbackRepositoryTest {
         assertThat(checkCourse.getFeedback()).isEqualTo(courseFeedback.getFeedback());
     }
 
+    @Transactional
     @Test
     public void should_delete_course_feedback_by_id() {
         Student student1 = entityManager.persist(EntityCreatorUtil.createStudent("1"));
@@ -224,6 +233,7 @@ public class CourseFeedbackRepositoryTest {
         assertThat(courseFeedbacks).hasSize(2).contains(courseFeedback1, courseFeedback3);
     }
 
+    @Transactional
     @Test
     public void should_delete_all_course_feedbacks() {
         Student student1 = entityManager.persist(EntityCreatorUtil.createStudent("1"));

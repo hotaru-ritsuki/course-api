@@ -1,6 +1,7 @@
 package com.example.courseapi.repository;
 
 
+import com.example.courseapi.config.PostgresRepositoryTestContainer;
 import com.example.courseapi.config.annotation.DefaultJPARepositoryTestConfiguration;
 import com.example.courseapi.domain.Course;
 import com.example.courseapi.domain.Instructor;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -18,7 +20,7 @@ import java.util.*;
 
 @SuppressWarnings("unused")
 @DefaultJPARepositoryTestConfiguration
-public class CourseRepositoryTest {
+public class CourseRepositoryTest extends PostgresRepositoryTestContainer {
     @Autowired
     private TestEntityManager entityManager;
 
@@ -44,6 +46,7 @@ public class CourseRepositoryTest {
         this.instructor = instructorSet;
     }
 
+    @Transactional
     @Test
     public void should_find_no_courses_if_repository_is_empty() {
         List<Course> courses = courseRepository.findAll();
@@ -51,6 +54,7 @@ public class CourseRepositoryTest {
         assertThat(courses).isEmpty();
     }
 
+    @Transactional
     @Test
     public void should_store_a_course() {
         Course course = courseRepository.save(EntityCreatorUtil.createCourse("", instructor));
@@ -59,6 +63,7 @@ public class CourseRepositoryTest {
         assertThat(course).hasFieldOrPropertyWithValue("description", "Course description #");
     }
 
+    @Transactional
     @Test
     public void should_find_all_courses() {
         Course course1 = EntityCreatorUtil.createCourse("1", instructor);
@@ -75,6 +80,7 @@ public class CourseRepositoryTest {
         assertThat(courses).hasSize(3).contains(course1, course2, course3);
     }
 
+    @Transactional
     @Test
     public void should_find_course_by_id() {
         Course course1 = EntityCreatorUtil.createCourse("1", instructor);
@@ -91,6 +97,7 @@ public class CourseRepositoryTest {
         assertThat(foundCourse).isEqualTo(course2);
     }
 
+    @Transactional
     @Test
     public void should_find_courses_by_title_containing_string() {
         Course course1 = EntityCreatorUtil.createCourse("1", instructor);
@@ -109,6 +116,7 @@ public class CourseRepositoryTest {
         assertThat(courses).hasSize(2).contains(course2, course3);
     }
 
+    @Transactional
     @Test
     public void should_find_courses_by_description_containing_string() {
         Course course1 = EntityCreatorUtil.createCourse("1", instructor);
@@ -127,6 +135,7 @@ public class CourseRepositoryTest {
         assertThat(courses).hasSize(2).contains(course1, course2);
     }
 
+    @Transactional
     @Test
     public void should_update_course_by_id() {
         Course course1 = EntityCreatorUtil.createCourse("1", instructor);
@@ -153,6 +162,7 @@ public class CourseRepositoryTest {
         assertThat(checkCourse.getDescription()).isEqualTo(course.getDescription());
     }
 
+    @Transactional
     @Test
     public void should_delete_course_by_id() {
         Course course1 = EntityCreatorUtil.createCourse("1", instructor);
@@ -171,6 +181,7 @@ public class CourseRepositoryTest {
         assertThat(courses).hasSize(2).contains(course1, course3);
     }
 
+    @Transactional
     @Test
     public void should_delete_all_courses() {
         Course course1 = EntityCreatorUtil.createCourse("1", instructor);

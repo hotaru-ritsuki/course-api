@@ -1,6 +1,7 @@
 package com.example.courseapi.rest;
 
 import com.example.courseapi.config.MockMvcBuilderTestConfiguration;
+import com.example.courseapi.config.PostgresTestContainer;
 import com.example.courseapi.config.annotation.DefaultTestConfiguration;
 import com.example.courseapi.domain.User;
 import com.example.courseapi.domain.enums.Roles;
@@ -38,7 +39,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @DefaultTestConfiguration
-class AuthControllerTest {
+class AuthControllerTest extends PostgresTestContainer {
     private static final String UPDATED_FIRSTNAME = "A_FIRSTNAME";
     private static final String UPDATED_LASTNAME = "A_LASTNAME";
 

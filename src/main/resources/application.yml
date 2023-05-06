@@ -2,12 +2,12 @@ application:
   name: Course Management Platform
   url: ${APPLICATION_URL:http://localhost:8080}
 spring:
-  debug:
-    requests: false
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/courseplatform}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+  debug:
+    requests: false
   flyway:
     locations: db.migration
   jpa:
