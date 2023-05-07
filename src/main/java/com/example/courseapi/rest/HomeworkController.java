@@ -34,7 +34,7 @@ import java.util.Optional;
 @RestController
 @RequiredArgsConstructor
 @PreAuthorize("isAuthenticated()")
-@RequestMapping(value = "/api/v1", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/api/v1")
 public class HomeworkController {
     private static final String ENTITY_NAME = "Homework";
 
