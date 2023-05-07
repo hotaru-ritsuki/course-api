@@ -3,7 +3,7 @@
   "containerDefinitions": [
     {
       "name": "course-api",
-      "image": "hotaruritsuki/course-api:0.1.67-fcc623f1",
+      "image": "hotaruritsuki/course-api:0.1.68-210914df",
       "essential": true,
       "memory": 512,
       "portMappings": [
