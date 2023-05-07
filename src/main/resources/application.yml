@@ -53,3 +53,9 @@ security:
     refresh-token-expiration: ${SECURITY_JWT_REFRESH_TOKEN_EXPIRATION:864000000}
     signing-key: ${SECURITY_JWT_SIGNING_KEY:24432646294A404E635266556A586E5A7234753778214125442A472D4B615064}
 
+aws:
+  s3:
+    mock: false
+    region: ${AWS_S3_REGION:eu-central-1}
+    bucket-name: ${AWS_S3_BUCKETNAME:elasticbeanstalk-eu-central}
+

@@ -14,6 +14,7 @@ import com.example.courseapi.repository.InstructorRepository;
 import com.example.courseapi.repository.LessonRepository;
 import com.example.courseapi.repository.StudentRepository;
 import com.example.courseapi.service.HomeworkService;
+import com.example.courseapi.service.S3Service;
 import com.example.courseapi.service.mapper.HomeworkMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -37,6 +39,7 @@ public class HomeworkServiceImpl implements HomeworkService {
     private final InstructorRepository instructorRepository;
     private final LessonRepository lessonRepository;
     private final HomeworkMapper homeworkMapper;
+    private final S3Service s3Service;
 
     @Override
     @Transactional(readOnly = true)
@@ -134,9 +137,37 @@ public class HomeworkServiceImpl implements HomeworkService {
         return homeworkRepository.findByStudentIdAndLessonId(studentId, courseId);
     }
 
+    @Override
+    public byte[] getHomeworkFile(Long lessonId, Long studentId, String identifier) {
+        studentRepository.findById(studentId).orElseThrow(() ->
+                new SystemException("Student with id: " + studentId + " not found.", ErrorCode.NOT_FOUND));
+        lessonRepository.findById(lessonId).orElseThrow(() ->
+                new SystemException("Lesson with id: " + lessonId + " not found.", ErrorCode.NOT_FOUND));
+
+        try {
+            return s3Service.getObject(getFileKey(lessonId, studentId, identifier));
+        } catch (IOException e) {
+            throw new SystemException("Failed to retrieve homework", e, ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @SuppressWarnings("unused")
     private String uploadHomeworkFile(final Student student, final Lesson lesson, final MultipartFile file) {
-        // TODO implementation with S3 Client
-        return RandomStringUtils.randomAlphabetic(10) + "/" + file.getName();
+        final String fileKey = getFileKey(lesson.getId(), student.getId());
+        try {
+            s3Service.putObject(fileKey, file.getBytes());
+        } catch (IOException e) {
+            throw new SystemException("Failed to upload homework", e, ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+        return fileKey;
+    }
+
+    private String getFileKey(Long lessonId, Long studentId) {
+        return getFileKey(lessonId, studentId, RandomStringUtils.randomAlphabetic(10));
+    }
+
+    private String getFileKey(Long lessonId, Long studentId, String identifier) {
+        return "homeworks/lesson/%s/student/%s/%s".formatted(
+                lessonId, studentId, identifier);
     }
 }

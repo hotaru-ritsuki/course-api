@@ -83,4 +83,6 @@ public interface HomeworkService {
      * @return the list of entities.
      */
     List<Homework> findAllByStudentIdAndCourseId(final Long studentId, final Long courseId);
+
+    byte[] getHomeworkFile(Long lessonId, Long studentId, String identifier);
 }
