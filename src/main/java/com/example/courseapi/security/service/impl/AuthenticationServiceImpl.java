@@ -74,8 +74,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             // Get authenticated user and generate access and refresh tokens
             User user = userRepository.findByEmail(loginRequestDTO.getEmail()).orElseThrow(() ->
                     new SystemException("User with email: " + loginRequestDTO.getEmail() + " not found.", ErrorCode.BAD_REQUEST));
-            String jwtAccessToken = jwtService.generateJwtToken(user, true);
-            String jwtRefreshToken = jwtService.generateJwtToken(user, false);
+            String jwtAccessToken = jwtService.generateJwtAccessToken(user);
+            String jwtRefreshToken = jwtService.generateJwtRefreshToken(user);
             log.info("User authentication successful for email {}", loginRequestDTO.getEmail());
             return JWTTokenDTO.builder()
                     .accessToken(jwtAccessToken)
@@ -99,7 +99,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         User userDetails = userRepository.findByEmail(userEmail).orElseThrow(() ->
                 new SystemException("Failed to refresh JWT token. User not found for email:" + userEmail, ErrorCode.UNAUTHORIZED));
         if (Objects.isNull(SecurityContextHolder.getContext().getAuthentication())) {
-            if (jwtService.isJwtTokenValid(refreshToken, userDetails)) {
+            if (jwtService.isJwtRefreshTokenValid(refreshToken, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,
@@ -110,12 +110,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 log.info("JWT token successfully refreshed for user: {}", userEmail);
             } else {
                 log.error("Failed to refresh JWT token. Refresh token is not valid for user: {}", userEmail);
+                throw new SystemException("Failed to validate JWT refresh token. Please login", ErrorCode.FORBIDDEN);
             }
         }
-        String jwtAccessToken = jwtService.generateJwtToken(userDetails, true);
+        String jwtAccessToken = jwtService.generateJwtAccessToken(userDetails);
+        String jwtRefreshToken = jwtService.generateJwtRefreshToken(userDetails);
         return JWTTokenDTO.builder()
                 .accessToken(jwtAccessToken)
-                .refreshToken(refreshToken) // return same refresh token
+                .refreshToken(jwtRefreshToken)
                 .build();
     }
 }

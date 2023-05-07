@@ -151,7 +151,6 @@ class AuthControllerTest extends PostgresTestContainer {
     @Test
     @Transactional
     void loginUserWithInvalidPassword() throws Exception {
-
         User user = userRepository.saveAndFlush(EntityCreatorUtil.createUser(""));
 
         // Create user
@@ -174,7 +173,7 @@ class AuthControllerTest extends PostgresTestContainer {
 
         User user = userRepository.saveAndFlush(EntityCreatorUtil.createUser(""));
 
-        String jwtRefreshToken = jwtService.generateJwtToken(user, true);
+        String jwtRefreshToken = jwtService.generateJwtRefreshToken(user);
         // Create user
         JWTRefreshDTO jwtRefreshDTO = JWTRefreshDTO.builder()
                 .refreshToken(jwtRefreshToken)
@@ -189,7 +188,7 @@ class AuthControllerTest extends PostgresTestContainer {
         JWTTokenDTO jwtTokenDTO = JacksonUtil.deserialize(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {
         });
         assertTrue(jwtService.isJwtTokenValid(jwtTokenDTO.getAccessToken(), user));
-        assertTrue(jwtService.isJwtTokenValid(jwtTokenDTO.getRefreshToken(), user));
+        assertTrue(jwtService.isJwtRefreshTokenValid(jwtTokenDTO.getRefreshToken(), user));
 
         // Validate new User in the database
         long databaseSizeAfterCreate= userRepository.count();

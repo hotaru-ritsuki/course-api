@@ -6,7 +6,10 @@ import com.example.courseapi.domain.CourseFeedback;
 import com.example.courseapi.domain.Student;
 import com.example.courseapi.dto.request.CourseFeedbackRequestDTO;
 import com.example.courseapi.dto.response.CourseFeedbackResponseDTO;
+import com.example.courseapi.exception.SystemException;
+import com.example.courseapi.exception.code.ErrorCode;
 import com.example.courseapi.repository.CourseFeedbackRepository;
+import com.example.courseapi.repository.StudentRepository;
 import com.example.courseapi.service.CourseFeedbackService;
 import com.example.courseapi.service.mapper.CourseFeedbackMapper;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +28,7 @@ import java.util.Optional;
 public class CourseFeedbackServiceImpl implements CourseFeedbackService {
     private final CourseFeedbackRepository courseFeedbackRepository;
     private final CourseFeedbackMapper courseFeedbackMapper;
+    private final StudentRepository studentRepository;
 
     @Transactional(readOnly = true)
     public Optional<CourseFeedbackResponseDTO> findById(final Long id) {
@@ -34,8 +38,10 @@ public class CourseFeedbackServiceImpl implements CourseFeedbackService {
 
     @Override
     @Transactional
-    public CourseFeedbackResponseDTO save(final CourseFeedbackRequestDTO courseDTO, final Student student) {
+    public CourseFeedbackResponseDTO save(final CourseFeedbackRequestDTO courseDTO, final Long studentId) {
         log.debug("Saving course feedback : {}", courseDTO);
+        Student student = studentRepository.findById(studentId).orElseThrow(() ->
+                new SystemException("Student with id: " + studentId + " not found.", ErrorCode.BAD_REQUEST));
         CourseFeedback course = courseFeedbackMapper.fromRequestDto(courseDTO);
         course.setStudent(student);
         course = courseFeedbackRepository.save(course);

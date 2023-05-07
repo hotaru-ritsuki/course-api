@@ -1,5 +1,6 @@
 package com.example.courseapi.security.service;
 
+import com.example.courseapi.domain.User;
 import io.jsonwebtoken.Claims;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -20,13 +21,20 @@ public interface JwtService {
     String extractUsername(final String jwtToken);
 
     /**
-     * Generates a JWT token for the given user details.
+     * Generates a JWT access token for the given user details.
      *
      * @param userDetails   the user details object containing user information
-     * @param isAccessToken a boolean flag indicating whether the token is an access token or not
      * @return the generated JWT token
      */
-    String generateJwtToken(final UserDetails userDetails, final boolean isAccessToken);
+    String generateJwtAccessToken(final UserDetails userDetails);
+
+    /**
+     * Generates a JWT refresh token for the given user details.
+     *
+     * @param user   the user details object containing user information
+     * @return the generated JWT token
+     */
+    String generateJwtRefreshToken(final User user);
 
     /**
      * Generates a JWT token for the given user details and extra claims.
@@ -57,4 +65,6 @@ public interface JwtService {
      * @return the extracted claim value
      */
     <T> T extractClaim(final String token, final Function<Claims, T> claimsResolver);
+
+    boolean isJwtRefreshTokenValid(String jwtToken, UserDetails userDetails);
 }
