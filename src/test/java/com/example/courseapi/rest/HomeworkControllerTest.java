@@ -1,6 +1,7 @@
 package com.example.courseapi.rest;
 
 import com.example.courseapi.config.MockMvcBuilderTestConfiguration;
+import com.example.courseapi.config.PostgresTestContainer;
 import com.example.courseapi.config.annotation.CustomMockAdmin;
 import com.example.courseapi.config.annotation.CustomMockStudent;
 import com.example.courseapi.config.annotation.DefaultTestConfiguration;
@@ -39,7 +40,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @DefaultTestConfiguration
-class HomeworkControllerTest {
+class HomeworkControllerTest extends PostgresTestContainer {
     private static final String DEFAULT_FILEPATH = "HOMEWORK_FILEPATH";
     private static final String DEFAULT_TITLE = "HOMEWORK_TITLE";
     private static final String UPDATED_FILEPATH = "HOMEWORK_FILEPATH_UPDATED";

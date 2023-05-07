@@ -1,5 +1,6 @@
 package com.example.courseapi.repository;
 
+import com.example.courseapi.config.PostgresRepositoryTestContainer;
 import com.example.courseapi.config.annotation.DefaultJPARepositoryTestConfiguration;
 import com.example.courseapi.domain.*;
 import com.example.courseapi.domain.enums.Roles;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -21,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SuppressWarnings("unused")
 @DefaultJPARepositoryTestConfiguration
-public class HomeworkRepositoryTest {
+public class HomeworkRepositoryTest extends PostgresRepositoryTestContainer {
 
     @Autowired
     private TestEntityManager entityManager;
@@ -72,6 +74,7 @@ public class HomeworkRepositoryTest {
     }
 
 
+    @Transactional
     @Test
     public void should_find_no_homeworks_if_repository_is_empty() {
         List<Homework> homeworks = homeworkRepository.findAll();
@@ -79,6 +82,7 @@ public class HomeworkRepositoryTest {
         assertThat(homeworks).isEmpty();
     }
 
+    @Transactional
     @Test
     public void should_store_a_homework() {
         Course course = courseRepository.save(EntityCreatorUtil.createCourse("1", instructor));
@@ -94,6 +98,7 @@ public class HomeworkRepositoryTest {
         assertThat(homework).hasFieldOrPropertyWithValue("student", student);
     }
 
+    @Transactional
     @Test
     public void should_find_all_homeworks() {
         Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
@@ -123,6 +128,7 @@ public class HomeworkRepositoryTest {
                 .contains(homework1, homework2, homework3);
     }
 
+    @Transactional
     @Test
     public void should_find_homework_by_id() {
         Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
@@ -146,6 +152,7 @@ public class HomeworkRepositoryTest {
         assertThat(foundHomework).isEqualTo(homework2);
     }
 
+    @Transactional
     @Test
     public void should_find_homeworks_by_title_containing_string() {
         Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
@@ -174,6 +181,7 @@ public class HomeworkRepositoryTest {
         assertThat(homeworks).hasSize(2).contains(homework2, homework3);
     }
 
+    @Transactional
     @Test
     public void should_update_homework_by_id() {
         Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
@@ -208,6 +216,7 @@ public class HomeworkRepositoryTest {
         assertThat(checkHomework.getFilePath()).isEqualTo(homework.getFilePath());
     }
 
+    @Transactional
     @Test
     public void should_delete_homework_by_id() {
         Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
@@ -238,6 +247,7 @@ public class HomeworkRepositoryTest {
         assertThat(homeworks).hasSize(2).contains(homework1, homework3);
     }
 
+    @Transactional
     @Test
     public void should_delete_all_homeworks() {
         Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));

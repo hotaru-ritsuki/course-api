@@ -17,6 +17,7 @@ import com.example.courseapi.domain.enums.Roles;
 import com.example.courseapi.dto.request.CourseFeedbackRequestDTO;
 import com.example.courseapi.dto.response.CourseFeedbackResponseDTO;
 import com.example.courseapi.repository.CourseFeedbackRepository;
+import com.example.courseapi.repository.StudentRepository;
 import com.example.courseapi.service.mapper.CourseFeedbackMapper;
 
 import java.time.LocalDate;
@@ -46,6 +47,9 @@ class CourseFeedbackServiceImplTest {
 
     @MockBean
     private CourseFeedbackRepository courseFeedbackRepository;
+
+    @MockBean
+    private StudentRepository studentRepository;
 
     @Autowired
     private CourseFeedbackServiceImpl courseFeedbackServiceImpl;
@@ -196,7 +200,8 @@ class CourseFeedbackServiceImplTest {
         student3.setPassword("SuperSecuredPassword");
         student3.setRole(Roles.ADMIN);
         student3.setStudentCourses(new HashSet<>());
-        assertSame(courseFeedbackResponseDTO, courseFeedbackServiceImpl.save(courseDTO, student3));
+        when(studentRepository.findById(Mockito.<Long>any())).thenReturn(Optional.of(student3));
+        assertSame(courseFeedbackResponseDTO, courseFeedbackServiceImpl.save(courseDTO, student3.getId()));
         verify(courseFeedbackRepository).save(Mockito.<CourseFeedback>any());
         verify(courseFeedbackMapper).fromRequestDto(Mockito.<CourseFeedbackRequestDTO>any());
         verify(courseFeedbackMapper).toResponseDto(Mockito.<CourseFeedback>any());

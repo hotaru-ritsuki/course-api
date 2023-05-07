@@ -1,5 +1,6 @@
 package com.example.courseapi.repository;
 
+import com.example.courseapi.config.PostgresRepositoryTestContainer;
 import com.example.courseapi.config.annotation.DefaultJPARepositoryTestConfiguration;
 import com.example.courseapi.domain.User;
 import com.example.courseapi.domain.enums.Roles;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SuppressWarnings("unused")
 @DefaultJPARepositoryTestConfiguration
-public class UserRepositoryTest {
+public class UserRepositoryTest extends PostgresRepositoryTestContainer {
 
     @Autowired
     private TestEntityManager entityManager;
@@ -38,13 +40,15 @@ public class UserRepositoryTest {
         this.closable = MockitoAnnotations.openMocks(this);
     }
 
+    @Transactional
     @Test
-    public void should_find_no_users_if_repository_is_empty() {
+    public void should_find_default_admin_if_repository_is_empty() {
         List<User> users = userRepository.findAll();
 
-        assertThat(users).isEmpty();
+        assertThat(users).hasSize(1);
     }
 
+    @Transactional
     @Test
     public void should_store_a_user() {
         User user = userRepository.save(
@@ -57,6 +61,7 @@ public class UserRepositoryTest {
         assertThat(user).hasFieldOrPropertyWithValue("role", Roles.STUDENT);
     }
 
+    @Transactional
     @Test
     public void should_find_all_users() {
         User user1 = entityManager.persist(
@@ -73,10 +78,11 @@ public class UserRepositoryTest {
 
         List<User> users = userRepository.findAll();
 
-        assertThat(users).hasSize(3)
+        assertThat(users).hasSize(4)
                 .contains(user1, user2, user3);
     }
 
+    @Transactional
     @Test
     public void should_find_user_by_id() {
         User user1 = entityManager.persist(
@@ -94,6 +100,7 @@ public class UserRepositoryTest {
         assertThat(foundUser).isEqualTo(user2);
     }
 
+    @Transactional
     @Test
     public void should_find_user_by_email() {
         User user1 = entityManager.persist(
@@ -111,6 +118,7 @@ public class UserRepositoryTest {
         assertThat(foundUser).isEqualTo(user1);
     }
 
+    @Transactional
     @Test
     public void should_update_user_by_id() {
         User user1 = entityManager.persist(
@@ -146,6 +154,7 @@ public class UserRepositoryTest {
         assertThat(checkUser.getPassword()).isEqualTo(user.getPassword());
     }
 
+    @Transactional
     @Test
     public void should_delete_user_by_id() {
         User user1 = entityManager.persist(
@@ -164,9 +173,10 @@ public class UserRepositoryTest {
 
         List<User> users = userRepository.findAll();
 
-        assertThat(users).hasSize(2).contains(user1, user3);
+        assertThat(users).hasSize(3).contains(user1, user3);
     }
 
+    @Transactional
     @Test
     public void should_delete_all_users() {
         User user1 = entityManager.persist(

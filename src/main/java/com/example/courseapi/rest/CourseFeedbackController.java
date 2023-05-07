@@ -57,7 +57,7 @@ public class CourseFeedbackController {
         if (courseFeedbackDTO.getId() != null) {
             throw new SystemException("A new courseFeedback cannot already have an ID", ErrorCode.BAD_REQUEST);
         }
-        CourseFeedbackResponseDTO result = courseFeedbackService.save(courseFeedbackDTO, student);
+        CourseFeedbackResponseDTO result = courseFeedbackService.save(courseFeedbackDTO, student.getId());
         return ResponseEntity.created(new URI("/api/course-feedbacks/" + result.getId()))
                 .headers(entityHeaderCreator.createEntityCreationAlert(ENTITY_NAME, result.getId().toString()))
                 .body(result);
@@ -79,7 +79,7 @@ public class CourseFeedbackController {
         if (courseFeedbackDTO.getId() == null) {
             throw new SystemException("Invalid id", ErrorCode.BAD_REQUEST);
         }
-        CourseFeedbackResponseDTO result = courseFeedbackService.save(courseFeedbackDTO, student);
+        CourseFeedbackResponseDTO result = courseFeedbackService.save(courseFeedbackDTO, student.getId());
         return ResponseEntity.ok()
                 .headers(entityHeaderCreator.createEntityUpdateAlert(ENTITY_NAME, courseFeedbackDTO.getId().toString()))
                 .body(result);

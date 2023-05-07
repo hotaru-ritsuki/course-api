@@ -1,6 +1,7 @@
 package com.example.courseapi.rest;
 
 import com.example.courseapi.config.MockMvcBuilderTestConfiguration;
+import com.example.courseapi.config.PostgresTestContainer;
 import com.example.courseapi.config.annotation.DefaultTestConfiguration;
 import com.example.courseapi.domain.User;
 import com.example.courseapi.domain.enums.Roles;
@@ -38,7 +39,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @DefaultTestConfiguration
-class AuthControllerTest {
+class AuthControllerTest extends PostgresTestContainer {
     private static final String UPDATED_FIRSTNAME = "A_FIRSTNAME";
     private static final String UPDATED_LASTNAME = "A_LASTNAME";
 
@@ -150,7 +151,6 @@ class AuthControllerTest {
     @Test
     @Transactional
     void loginUserWithInvalidPassword() throws Exception {
-
         User user = userRepository.saveAndFlush(EntityCreatorUtil.createUser(""));
 
         // Create user
@@ -173,7 +173,7 @@ class AuthControllerTest {
 
         User user = userRepository.saveAndFlush(EntityCreatorUtil.createUser(""));
 
-        String jwtRefreshToken = jwtService.generateJwtToken(user, true);
+        String jwtRefreshToken = jwtService.generateJwtRefreshToken(user);
         // Create user
         JWTRefreshDTO jwtRefreshDTO = JWTRefreshDTO.builder()
                 .refreshToken(jwtRefreshToken)
@@ -188,7 +188,7 @@ class AuthControllerTest {
         JWTTokenDTO jwtTokenDTO = JacksonUtil.deserialize(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {
         });
         assertTrue(jwtService.isJwtTokenValid(jwtTokenDTO.getAccessToken(), user));
-        assertTrue(jwtService.isJwtTokenValid(jwtTokenDTO.getRefreshToken(), user));
+        assertTrue(jwtService.isJwtRefreshTokenValid(jwtTokenDTO.getRefreshToken(), user));
 
         // Validate new User in the database
         long databaseSizeAfterCreate= userRepository.count();

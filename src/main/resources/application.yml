@@ -2,12 +2,12 @@ application:
   name: Course Management Platform
   url: ${APPLICATION_URL:http://localhost:8080}
 spring:
-  debug:
-    requests: false
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/courseplatform}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+  debug:
+    requests: false
   flyway:
     locations: db.migration
   jpa:
@@ -52,4 +52,10 @@ security:
     access-token-expiration: ${SECURITY_JWT_ACCESS_TOKEN_EXPIRATION:36000000}
     refresh-token-expiration: ${SECURITY_JWT_REFRESH_TOKEN_EXPIRATION:864000000}
     signing-key: ${SECURITY_JWT_SIGNING_KEY:24432646294A404E635266556A586E5A7234753778214125442A472D4B615064}
+
+aws:
+  s3:
+    mock: false
+    region: ${AWS_S3_REGION:eu-central-1}
+    bucket-name: ${AWS_S3_BUCKETNAME:elasticbeanstalk-eu-central}
 

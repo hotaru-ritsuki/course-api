@@ -1,6 +1,7 @@
 package com.example.courseapi.e2e;
 
 import com.example.courseapi.config.MockMvcBuilderTestConfiguration;
+import com.example.courseapi.config.PostgresTestContainer;
 import com.example.courseapi.config.annotation.DefaultTestConfiguration;
 import com.example.courseapi.domain.*;
 import com.example.courseapi.domain.enums.CourseStatus;
@@ -54,7 +55,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DefaultTestConfiguration
 @SpringBootTest
 @Import(SecurityConfig.class)
-class  CourseManagementScenariosTest {
+class CourseManagementScenariosTest extends PostgresTestContainer {
 
     @Autowired
     private MockMvcBuilderTestConfiguration mockMvcBuilderTestConfiguration;

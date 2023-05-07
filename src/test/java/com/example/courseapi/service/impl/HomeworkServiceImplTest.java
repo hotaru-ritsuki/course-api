@@ -24,6 +24,7 @@ import com.example.courseapi.repository.HomeworkRepository;
 import com.example.courseapi.repository.InstructorRepository;
 import com.example.courseapi.repository.LessonRepository;
 import com.example.courseapi.repository.StudentRepository;
+import com.example.courseapi.service.S3Service;
 import com.example.courseapi.service.mapper.HomeworkMapper;
 
 import java.io.ByteArrayInputStream;
@@ -69,6 +70,9 @@ class HomeworkServiceImplTest {
 
     @MockBean
     private StudentRepository studentRepository;
+
+    @MockBean
+    private S3Service s3Service;
 
     /**
      * Method under test: {@link HomeworkServiceImpl#findById(Long)}

@@ -115,6 +115,22 @@ public class HomeworkController {
     }
 
     /**
+     * {@code GET  /homeworks/lesson/:id/student/:id/:identifier} : get the file for "id" homework.
+     *
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the homeworkDTO,
+     * or with status {@code 404 (Not Found)}.
+     */
+    @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
+    @GetMapping("/homeworks/lesson/{lessonId}/student/{studentId}/{identifier}")
+    public byte[] getHomeworkFile(@PathVariable final Long lessonId,
+                                  @PathVariable final Long studentId,
+                                  @PathVariable final String identifier) {
+        log.debug("REST GET request to get a homework file for lesson id: {}, student id: {} and identifier : {}",
+                lessonId, studentId, identifier);
+        return homeworkService.getHomeworkFile(lessonId, studentId, identifier);
+    }
+
+    /**
      * {@code DELETE  /homeworks/:id} : delete the "id" homework.
      *
      * @param homeworkId the id of the homeworkDTO to delete.

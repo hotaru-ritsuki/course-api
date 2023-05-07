@@ -30,7 +30,7 @@ public interface CourseFeedbackService {
      * @param courseDTO the course feedback DTO to save or update
      * @return the saved or updated course feedback DTO
      */
-    CourseFeedbackResponseDTO save(final CourseFeedbackRequestDTO courseDTO, final Student student);
+    CourseFeedbackResponseDTO save(final CourseFeedbackRequestDTO courseDTO, final Long studentId);
 
     /**
      * Finds all course feedback entries with optional filters and pagination.

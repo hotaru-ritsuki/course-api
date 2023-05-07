@@ -2,8 +2,6 @@ package com.example.courseapi.security.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.anyBoolean;
-import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -68,20 +66,20 @@ class AuthenticationServiceImplTest {
     @Test
     void testRegister() {
         User user = new User();
-        user.setCreatedBy("Anonymous");
+        user.setCreatedBy("Jan 1, 2020 8:00am GMT+0100");
         user.setCreatedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setEmail("boom.boom@courseapi.org");
+        user.setEmail("student@courseapi.org");
         user.setFirstName("FirstName");
         user.setId(1L);
         user.setLastName("LastName");
-        user.setModifiedBy("Anonymous");
+        user.setModifiedBy("Jan 1, 2020 9:00am GMT+0100");
         user.setModifiedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setPassword("SuperSecuredPassword");
+        user.setPassword("password");
         user.setRole(Roles.ADMIN);
         when(userRepository.existsByEmail(Mockito.<String>any())).thenReturn(true);
         when(userRepository.save(Mockito.<User>any())).thenReturn(user);
         assertThrows(SystemException.class, () -> authenticationServiceImpl
-                .register(new SignUpRequestDTO("FirstName", "LastName", "boom.boom@courseapi.org", "SuperSecuredPassword")));
+                .register(new SignUpRequestDTO("FirstName", "LastName", "student@courseapi.org", "password")));
         verify(userRepository).existsByEmail(Mockito.<String>any());
     }
 
@@ -91,46 +89,25 @@ class AuthenticationServiceImplTest {
     @Test
     void testRegister2() {
         User user = new User();
-        user.setCreatedBy("Anonymous");
+        user.setCreatedBy("Jan 1, 2020 8:00am GMT+0100");
         user.setCreatedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setEmail("boom.boom@courseapi.org");
+        user.setEmail("student@courseapi.org");
         user.setFirstName("FirstName");
         user.setId(1L);
         user.setLastName("LastName");
-        user.setModifiedBy("Anonymous");
+        user.setModifiedBy("Jan 1, 2020 9:00am GMT+0100");
         user.setModifiedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setPassword("SuperSecuredPassword");
+        user.setPassword("password");
         user.setRole(Roles.ADMIN);
         when(userRepository.existsByEmail(Mockito.<String>any())).thenReturn(false);
         when(userRepository.save(Mockito.<User>any())).thenReturn(user);
         when(passwordEncoder.encode(Mockito.<CharSequence>any())).thenReturn("secret");
-        authenticationServiceImpl.register(new SignUpRequestDTO("FirstName", "LastName", "boom.boom@courseapi.org", "SuperSecuredPassword"));
+        authenticationServiceImpl.register(new SignUpRequestDTO("FirstName", "LastName", "student@courseapi.org", "password"));
         verify(userRepository).existsByEmail(Mockito.<String>any());
         verify(userRepository).save(Mockito.<User>any());
         verify(passwordEncoder).encode(Mockito.<CharSequence>any());
     }
 
-    /**
-     * Method under test: {@link AuthenticationServiceImpl#register(SignUpRequestDTO)}
-     */
-    @Test
-    void testRegister3() {
-        User user = new User();
-        user.setCreatedBy("Anonymous");
-        user.setCreatedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setEmail("boom.boom@courseapi.org");
-        user.setFirstName("FirstName");
-        user.setId(1L);
-        user.setLastName("LastName");
-        user.setModifiedBy("Anonymous");
-        user.setModifiedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setPassword("SuperSecuredPassword");
-        user.setRole(Roles.ADMIN);
-        when(userRepository.existsByEmail(Mockito.<String>any())).thenReturn(false);
-        when(userRepository.save(Mockito.<User>any())).thenReturn(user);
-        when(passwordEncoder.encode(Mockito.<CharSequence>any())).thenReturn("secret");
-        authenticationServiceImpl.register(new SignUpRequestDTO());
-    }
 
     /**
      * Method under test: {@link AuthenticationServiceImpl#register(SignUpRequestDTO)}
@@ -138,21 +115,21 @@ class AuthenticationServiceImplTest {
     @Test
     void testRegister4() {
         User user = new User();
-        user.setCreatedBy("Anonymous");
+        user.setCreatedBy("Jan 1, 2020 8:00am GMT+0100");
         user.setCreatedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setEmail("boom.boom@courseapi.org");
+        user.setEmail("student@courseapi.org");
         user.setFirstName("FirstName");
         user.setId(1L);
         user.setLastName("LastName");
-        user.setModifiedBy("Anonymous");
+        user.setModifiedBy("Jan 1, 2020 9:00am GMT+0100");
         user.setModifiedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setPassword("SuperSecuredPassword");
+        user.setPassword("password");
         user.setRole(Roles.ADMIN);
         when(userRepository.existsByEmail(Mockito.<String>any())).thenReturn(false);
         when(userRepository.save(Mockito.<User>any())).thenReturn(user);
         when(passwordEncoder.encode(Mockito.<CharSequence>any())).thenThrow(new SystemException(ErrorCode.OK));
         assertThrows(SystemException.class, () -> authenticationServiceImpl
-                .register(new SignUpRequestDTO("FirstName", "LastName", "boom.boom@courseapi.org", "SuperSecuredPassword")));
+                .register(new SignUpRequestDTO("FirstName", "LastName", "student@courseapi.org", "password")));
         verify(userRepository).existsByEmail(Mockito.<String>any());
         verify(passwordEncoder).encode(Mockito.<CharSequence>any());
     }
@@ -163,28 +140,30 @@ class AuthenticationServiceImplTest {
     @Test
     void testLogin() throws AuthenticationException {
         User user = new User();
-        user.setCreatedBy("Anonymous");
+        user.setCreatedBy("Jan 1, 2020 8:00am GMT+0100");
         user.setCreatedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setEmail("boom.boom@courseapi.org");
+        user.setEmail("student@courseapi.org");
         user.setFirstName("FirstName");
         user.setId(1L);
         user.setLastName("LastName");
-        user.setModifiedBy("Anonymous");
+        user.setModifiedBy("Jan 1, 2020 9:00am GMT+0100");
         user.setModifiedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setPassword("SuperSecuredPassword");
+        user.setPassword("password");
         user.setRole(Roles.ADMIN);
         Optional<User> ofResult = Optional.of(user);
         when(userRepository.findByEmail(Mockito.<String>any())).thenReturn(ofResult);
-        when(jwtService.generateJwtToken(Mockito.<UserDetails>any(), anyBoolean())).thenReturn("ABC123");
+        when(jwtService.generateJwtAccessToken(Mockito.<UserDetails>any())).thenReturn("ABC123");
+        when(jwtService.generateJwtRefreshToken(Mockito.<User>any())).thenReturn("ABC123");
         when(authenticationManager.authenticate(Mockito.<Authentication>any()))
                 .thenReturn(new TestingAuthenticationToken("Principal", "Credentials"));
-        LoginRequestDTO loginRequestDTO = new LoginRequestDTO("boom.boom@courseapi.org", "SuperSecuredPassword");
+        LoginRequestDTO loginRequestDTO = new LoginRequestDTO("student@courseapi.org", "password");
 
         JWTTokenDTO actualLoginResult = authenticationServiceImpl.login(loginRequestDTO, new MockHttpServletRequest());
         assertEquals("ABC123", actualLoginResult.getAccessToken());
         assertEquals("ABC123", actualLoginResult.getRefreshToken());
         verify(userRepository).findByEmail(Mockito.<String>any());
-        verify(jwtService, atLeast(1)).generateJwtToken(Mockito.<UserDetails>any(), anyBoolean());
+        verify(jwtService).generateJwtAccessToken(Mockito.<UserDetails>any());
+        verify(jwtService).generateJwtRefreshToken(Mockito.<User>any());
         verify(authenticationManager).authenticate(Mockito.<Authentication>any());
     }
 
@@ -194,22 +173,23 @@ class AuthenticationServiceImplTest {
     @Test
     void testLogin2() throws AuthenticationException {
         User user = new User();
-        user.setCreatedBy("Anonymous");
+        user.setCreatedBy("Jan 1, 2020 8:00am GMT+0100");
         user.setCreatedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setEmail("boom.boom@courseapi.org");
+        user.setEmail("student@courseapi.org");
         user.setFirstName("FirstName");
         user.setId(1L);
         user.setLastName("LastName");
-        user.setModifiedBy("Anonymous");
+        user.setModifiedBy("Jan 1, 2020 9:00am GMT+0100");
         user.setModifiedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setPassword("SuperSecuredPassword");
+        user.setPassword("password");
         user.setRole(Roles.ADMIN);
         Optional<User> ofResult = Optional.of(user);
         when(userRepository.findByEmail(Mockito.<String>any())).thenReturn(ofResult);
-        when(jwtService.generateJwtToken(Mockito.<UserDetails>any(), anyBoolean())).thenReturn("ABC123");
+        when(jwtService.generateJwtAccessToken(Mockito.<UserDetails>any())).thenReturn("ABC123");
+        when(jwtService.generateJwtRefreshToken(Mockito.<User>any())).thenReturn("ABC123");
         when(authenticationManager.authenticate(Mockito.<Authentication>any()))
                 .thenThrow(new SystemException(ErrorCode.OK));
-        LoginRequestDTO loginRequestDTO = new LoginRequestDTO("boom.boom@courseapi.org", "SuperSecuredPassword");
+        LoginRequestDTO loginRequestDTO = new LoginRequestDTO("student@courseapi.org", "password");
 
         assertThrows(SystemException.class,
                 () -> authenticationServiceImpl.login(loginRequestDTO, new MockHttpServletRequest()));
@@ -222,10 +202,11 @@ class AuthenticationServiceImplTest {
     @Test
     void testLogin3() throws AuthenticationException {
         when(userRepository.findByEmail(Mockito.<String>any())).thenReturn(Optional.empty());
-        when(jwtService.generateJwtToken(Mockito.<UserDetails>any(), anyBoolean())).thenReturn("ABC123");
+        when(jwtService.generateJwtAccessToken(Mockito.<UserDetails>any())).thenReturn("ABC123");
+        when(jwtService.generateJwtRefreshToken(Mockito.<User>any())).thenReturn("ABC123");
         when(authenticationManager.authenticate(Mockito.<Authentication>any()))
                 .thenReturn(new TestingAuthenticationToken("Principal", "Credentials"));
-        LoginRequestDTO loginRequestDTO = new LoginRequestDTO("boom.boom@courseapi.org", "SuperSecuredPassword");
+        LoginRequestDTO loginRequestDTO = new LoginRequestDTO("student@courseapi.org", "password");
 
         assertThrows(SystemException.class,
                 () -> authenticationServiceImpl.login(loginRequestDTO, new MockHttpServletRequest()));
@@ -234,84 +215,36 @@ class AuthenticationServiceImplTest {
     }
 
     /**
-     * Method under test: {@link AuthenticationServiceImpl#login(LoginRequestDTO, HttpServletRequest)}
-     */
-    @Test
-    void testLogin4() throws AuthenticationException {
-
-        User user = new User();
-        user.setCreatedBy("Anonymous");
-        user.setCreatedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setEmail("boom.boom@courseapi.org");
-        user.setFirstName("FirstName");
-        user.setId(1L);
-        user.setLastName("LastName");
-        user.setModifiedBy("Anonymous");
-        user.setModifiedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setPassword("SuperSecuredPassword");
-        user.setRole(Roles.ADMIN);
-        Optional<User> ofResult = Optional.of(user);
-        when(userRepository.findByEmail(Mockito.<String>any())).thenReturn(ofResult);
-        when(jwtService.generateJwtToken(Mockito.<UserDetails>any(), anyBoolean())).thenReturn("ABC123");
-        when(authenticationManager.authenticate(Mockito.<Authentication>any()))
-                .thenReturn(new TestingAuthenticationToken("Principal", "Credentials"));
-        authenticationServiceImpl.login(new LoginRequestDTO(), new MockHttpServletRequest());
-    }
-
-    /**
-     * Method under test: {@link AuthenticationServiceImpl#login(LoginRequestDTO, HttpServletRequest)}
-     */
-    @Test
-    void testLogin5() throws AuthenticationException {
-
-        User user = new User();
-        user.setCreatedBy("Anonymous");
-        user.setCreatedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setEmail("boom.boom@courseapi.org");
-        user.setFirstName("FirstName");
-        user.setId(1L);
-        user.setLastName("LastName");
-        user.setModifiedBy("Anonymous");
-        user.setModifiedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setPassword("SuperSecuredPassword");
-        user.setRole(Roles.ADMIN);
-        Optional<User> ofResult = Optional.of(user);
-        when(userRepository.findByEmail(Mockito.<String>any())).thenReturn(ofResult);
-        when(jwtService.generateJwtToken(Mockito.<UserDetails>any(), anyBoolean())).thenReturn("ABC123");
-        when(authenticationManager.authenticate(Mockito.<Authentication>any()))
-                .thenReturn(new TestingAuthenticationToken("Principal", "Credentials"));
-        authenticationServiceImpl.login(new LoginRequestDTO("boom.boom@courseapi.org", "SuperSecuredPassword"), new MockHttpServletRequest());
-    }
-
-    /**
      * Method under test: {@link AuthenticationServiceImpl#refresh(JWTRefreshDTO, HttpServletRequest)}
      */
     @Test
     void testRefresh() {
         User user = new User();
-        user.setCreatedBy("Anonymous");
+        user.setCreatedBy("Jan 1, 2020 8:00am GMT+0100");
         user.setCreatedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setEmail("boom.boom@courseapi.org");
+        user.setEmail("student@courseapi.org");
         user.setFirstName("FirstName");
         user.setId(1L);
         user.setLastName("LastName");
-        user.setModifiedBy("Anonymous");
+        user.setModifiedBy("Jan 1, 2020 9:00am GMT+0100");
         user.setModifiedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setPassword("SuperSecuredPassword");
+        user.setPassword("password");
         user.setRole(Roles.ADMIN);
         Optional<User> ofResult = Optional.of(user);
         when(userRepository.findByEmail(Mockito.<String>any())).thenReturn(ofResult);
-        when(jwtService.isJwtTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any())).thenReturn(true);
-        when(jwtService.generateJwtToken(Mockito.<UserDetails>any(), anyBoolean())).thenReturn("ABC123");
+        when(jwtService.generateJwtAccessToken(Mockito.<UserDetails>any())).thenReturn("ABC123");
+        when(jwtService.generateJwtRefreshToken(Mockito.<User>any())).thenReturn("ABC123");
+        when(jwtService.isJwtRefreshTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any())).thenReturn(true);
         when(jwtService.extractUsername(Mockito.<String>any())).thenReturn("janedoe");
         JWTRefreshDTO jwtRefreshDTO = new JWTRefreshDTO("ABC123");
         JWTTokenDTO actualRefreshResult = authenticationServiceImpl.refresh(jwtRefreshDTO, new MockHttpServletRequest());
         assertEquals("ABC123", actualRefreshResult.getAccessToken());
         assertEquals("ABC123", actualRefreshResult.getRefreshToken());
         verify(userRepository).findByEmail(Mockito.<String>any());
-        verify(jwtService).isJwtTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any());
+        verify(jwtService).isJwtRefreshTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any());
         verify(jwtService).extractUsername(Mockito.<String>any());
-        verify(jwtService).generateJwtToken(Mockito.<UserDetails>any(), anyBoolean());
+        verify(jwtService).generateJwtAccessToken(Mockito.<UserDetails>any());
+        verify(jwtService).generateJwtRefreshToken(Mockito.<User>any());
     }
 
     /**
@@ -320,29 +253,29 @@ class AuthenticationServiceImplTest {
     @Test
     void testRefresh2() {
         User user = new User();
-        user.setCreatedBy("Anonymous");
+        user.setCreatedBy("Jan 1, 2020 8:00am GMT+0100");
         user.setCreatedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setEmail("boom.boom@courseapi.org");
+        user.setEmail("student@courseapi.org");
         user.setFirstName("FirstName");
         user.setId(1L);
         user.setLastName("LastName");
-        user.setModifiedBy("Anonymous");
+        user.setModifiedBy("Jan 1, 2020 9:00am GMT+0100");
         user.setModifiedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        user.setPassword("SuperSecuredPassword");
+        user.setPassword("password");
         user.setRole(Roles.ADMIN);
         Optional<User> ofResult = Optional.of(user);
         when(userRepository.findByEmail(Mockito.<String>any())).thenReturn(ofResult);
-        when(jwtService.isJwtTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any()))
-                .thenThrow(new SystemException(ErrorCode.OK));
-        when(jwtService.generateJwtToken(Mockito.<UserDetails>any(), anyBoolean()))
-                .thenThrow(new SystemException(ErrorCode.OK));
+        when(jwtService.generateJwtAccessToken(Mockito.<UserDetails>any())).thenThrow(new SystemException(ErrorCode.OK));
+        when(jwtService.generateJwtRefreshToken(Mockito.<User>any())).thenThrow(new SystemException(ErrorCode.OK));
+        when(jwtService.isJwtRefreshTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any())).thenReturn(true);
         when(jwtService.extractUsername(Mockito.<String>any())).thenReturn("janedoe");
         JWTRefreshDTO jwtRefreshDTO = new JWTRefreshDTO("ABC123");
         assertThrows(SystemException.class,
                 () -> authenticationServiceImpl.refresh(jwtRefreshDTO, new MockHttpServletRequest()));
         verify(userRepository).findByEmail(Mockito.<String>any());
-        verify(jwtService).isJwtTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any());
+        verify(jwtService).isJwtRefreshTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any());
         verify(jwtService).extractUsername(Mockito.<String>any());
+        verify(jwtService).generateJwtAccessToken(Mockito.<UserDetails>any());
     }
 
     /**
@@ -362,20 +295,21 @@ class AuthenticationServiceImplTest {
         doNothing().when(student).setLastName(Mockito.<String>any());
         doNothing().when(student).setPassword(Mockito.<String>any());
         doNothing().when(student).setRole(Mockito.<Roles>any());
-        student.setCreatedBy("Anonymous");
+        student.setCreatedBy("Jan 1, 2020 8:00am GMT+0100");
         student.setCreatedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        student.setEmail("boom.boom@courseapi.org");
+        student.setEmail("student@courseapi.org");
         student.setFirstName("FirstName");
         student.setId(1L);
         student.setLastName("LastName");
-        student.setModifiedBy("Anonymous");
+        student.setModifiedBy("Jan 1, 2020 9:00am GMT+0100");
         student.setModifiedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        student.setPassword("SuperSecuredPassword");
+        student.setPassword("password");
         student.setRole(Roles.ADMIN);
         Optional<User> ofResult = Optional.of(student);
         when(userRepository.findByEmail(Mockito.<String>any())).thenReturn(ofResult);
-        when(jwtService.isJwtTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any())).thenReturn(true);
-        when(jwtService.generateJwtToken(Mockito.<UserDetails>any(), anyBoolean())).thenReturn("ABC123");
+        when(jwtService.generateJwtAccessToken(Mockito.<UserDetails>any())).thenReturn("ABC123");
+        when(jwtService.generateJwtRefreshToken(Mockito.<User>any())).thenReturn("ABC123");
+        when(jwtService.isJwtRefreshTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any())).thenReturn(true);
         when(jwtService.extractUsername(Mockito.<String>any())).thenReturn("janedoe");
         JWTRefreshDTO jwtRefreshDTO = new JWTRefreshDTO("ABC123");
         JWTTokenDTO actualRefreshResult = authenticationServiceImpl.refresh(jwtRefreshDTO, new MockHttpServletRequest());
@@ -393,9 +327,10 @@ class AuthenticationServiceImplTest {
         verify(student).setLastName(Mockito.<String>any());
         verify(student).setPassword(Mockito.<String>any());
         verify(student).setRole(Mockito.<Roles>any());
-        verify(jwtService).isJwtTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any());
+        verify(jwtService).isJwtRefreshTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any());
         verify(jwtService).extractUsername(Mockito.<String>any());
-        verify(jwtService).generateJwtToken(Mockito.<UserDetails>any(), anyBoolean());
+        verify(jwtService).generateJwtAccessToken(Mockito.<UserDetails>any());
+        verify(jwtService).generateJwtRefreshToken(Mockito.<User>any());
     }
 
     /**
@@ -416,18 +351,19 @@ class AuthenticationServiceImplTest {
         doNothing().when(student).setLastName(Mockito.<String>any());
         doNothing().when(student).setPassword(Mockito.<String>any());
         doNothing().when(student).setRole(Mockito.<Roles>any());
-        student.setCreatedBy("Anonymous");
+        student.setCreatedBy("Jan 1, 2020 8:00am GMT+0100");
         student.setCreatedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        student.setEmail("boom.boom@courseapi.org");
+        student.setEmail("student@courseapi.org");
         student.setFirstName("FirstName");
         student.setId(1L);
         student.setLastName("LastName");
-        student.setModifiedBy("Anonymous");
+        student.setModifiedBy("Jan 1, 2020 9:00am GMT+0100");
         student.setModifiedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        student.setPassword("SuperSecuredPassword");
+        student.setPassword("password");
         student.setRole(Roles.ADMIN);
-        when(jwtService.isJwtTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any())).thenReturn(true);
-        when(jwtService.generateJwtToken(Mockito.<UserDetails>any(), anyBoolean())).thenReturn("ABC123");
+        when(jwtService.generateJwtAccessToken(Mockito.<UserDetails>any())).thenReturn("ABC123");
+        when(jwtService.generateJwtRefreshToken(Mockito.<User>any())).thenReturn("ABC123");
+        when(jwtService.isJwtRefreshTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any())).thenReturn(true);
         when(jwtService.extractUsername(Mockito.<String>any())).thenReturn("janedoe");
         JWTRefreshDTO jwtRefreshDTO = new JWTRefreshDTO("ABC123");
         assertThrows(SystemException.class,
@@ -463,25 +399,25 @@ class AuthenticationServiceImplTest {
         doNothing().when(student).setLastName(Mockito.<String>any());
         doNothing().when(student).setPassword(Mockito.<String>any());
         doNothing().when(student).setRole(Mockito.<Roles>any());
-        student.setCreatedBy("Anonymous");
+        student.setCreatedBy("Jan 1, 2020 8:00am GMT+0100");
         student.setCreatedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        student.setEmail("boom.boom@courseapi.org");
+        student.setEmail("student@courseapi.org");
         student.setFirstName("FirstName");
         student.setId(1L);
         student.setLastName("LastName");
-        student.setModifiedBy("Anonymous");
+        student.setModifiedBy("Jan 1, 2020 9:00am GMT+0100");
         student.setModifiedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        student.setPassword("SuperSecuredPassword");
+        student.setPassword("password");
         student.setRole(Roles.ADMIN);
         Optional<User> ofResult = Optional.of(student);
         when(userRepository.findByEmail(Mockito.<String>any())).thenReturn(ofResult);
-        when(jwtService.isJwtTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any())).thenReturn(false);
-        when(jwtService.generateJwtToken(Mockito.<UserDetails>any(), anyBoolean())).thenReturn("ABC123");
+        when(jwtService.generateJwtAccessToken(Mockito.<UserDetails>any())).thenReturn("ABC123");
+        when(jwtService.generateJwtRefreshToken(Mockito.<User>any())).thenReturn("ABC123");
+        when(jwtService.isJwtRefreshTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any())).thenReturn(false);
         when(jwtService.extractUsername(Mockito.<String>any())).thenReturn("janedoe");
         JWTRefreshDTO jwtRefreshDTO = new JWTRefreshDTO("ABC123");
-        JWTTokenDTO actualRefreshResult = authenticationServiceImpl.refresh(jwtRefreshDTO, new MockHttpServletRequest());
-        assertEquals("ABC123", actualRefreshResult.getAccessToken());
-        assertEquals("ABC123", actualRefreshResult.getRefreshToken());
+        assertThrows(SystemException.class,
+                () -> authenticationServiceImpl.refresh(jwtRefreshDTO, new MockHttpServletRequest()));
         verify(userRepository).findByEmail(Mockito.<String>any());
         verify(student).setCreatedBy(Mockito.<String>any());
         verify(student).setCreatedDate(Mockito.<LocalDateTime>any());
@@ -493,9 +429,8 @@ class AuthenticationServiceImplTest {
         verify(student).setLastName(Mockito.<String>any());
         verify(student).setPassword(Mockito.<String>any());
         verify(student).setRole(Mockito.<Roles>any());
-        verify(jwtService).isJwtTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any());
+        verify(jwtService).isJwtRefreshTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any());
         verify(jwtService).extractUsername(Mockito.<String>any());
-        verify(jwtService).generateJwtToken(Mockito.<UserDetails>any(), anyBoolean());
     }
 
     /**
@@ -515,20 +450,21 @@ class AuthenticationServiceImplTest {
         doNothing().when(student).setLastName(Mockito.<String>any());
         doNothing().when(student).setPassword(Mockito.<String>any());
         doNothing().when(student).setRole(Mockito.<Roles>any());
-        student.setCreatedBy("Anonymous");
+        student.setCreatedBy("Jan 1, 2020 8:00am GMT+0100");
         student.setCreatedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        student.setEmail("boom.boom@courseapi.org");
+        student.setEmail("student@courseapi.org");
         student.setFirstName("FirstName");
         student.setId(1L);
         student.setLastName("LastName");
-        student.setModifiedBy("Anonymous");
+        student.setModifiedBy("Jan 1, 2020 9:00am GMT+0100");
         student.setModifiedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        student.setPassword("SuperSecuredPassword");
+        student.setPassword("password");
         student.setRole(Roles.ADMIN);
         Optional<User> ofResult = Optional.of(student);
         when(userRepository.findByEmail(Mockito.<String>any())).thenReturn(ofResult);
-        when(jwtService.isJwtTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any())).thenReturn(true);
-        when(jwtService.generateJwtToken(Mockito.<UserDetails>any(), anyBoolean())).thenReturn("ABC123");
+        when(jwtService.generateJwtAccessToken(Mockito.<UserDetails>any())).thenReturn("ABC123");
+        when(jwtService.generateJwtRefreshToken(Mockito.<User>any())).thenReturn("ABC123");
+        when(jwtService.isJwtRefreshTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any())).thenReturn(true);
         when(jwtService.extractUsername(Mockito.<String>any())).thenReturn("");
         JWTRefreshDTO jwtRefreshDTO = new JWTRefreshDTO("ABC123");
         assertThrows(SystemException.class,
@@ -544,78 +480,6 @@ class AuthenticationServiceImplTest {
         verify(student).setPassword(Mockito.<String>any());
         verify(student).setRole(Mockito.<Roles>any());
         verify(jwtService).extractUsername(Mockito.<String>any());
-    }
-
-    /**
-     * Method under test: {@link AuthenticationServiceImpl#refresh(JWTRefreshDTO, HttpServletRequest)}
-     */
-    @Test
-    void testRefresh7() {
-
-        Student student = mock(Student.class);
-        Mockito.<Collection<? extends GrantedAuthority>>when(student.getAuthorities()).thenReturn(new ArrayList<>());
-        doNothing().when(student).setCreatedBy(Mockito.<String>any());
-        doNothing().when(student).setCreatedDate(Mockito.<LocalDateTime>any());
-        doNothing().when(student).setModifiedBy(Mockito.<String>any());
-        doNothing().when(student).setModifiedDate(Mockito.<LocalDateTime>any());
-        doNothing().when(student).setEmail(Mockito.<String>any());
-        doNothing().when(student).setFirstName(Mockito.<String>any());
-        doNothing().when(student).setId(Mockito.<Long>any());
-        doNothing().when(student).setLastName(Mockito.<String>any());
-        doNothing().when(student).setPassword(Mockito.<String>any());
-        doNothing().when(student).setRole(Mockito.<Roles>any());
-        student.setCreatedBy("Anonymous");
-        student.setCreatedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        student.setEmail("boom.boom@courseapi.org");
-        student.setFirstName("FirstName");
-        student.setId(1L);
-        student.setLastName("LastName");
-        student.setModifiedBy("Anonymous");
-        student.setModifiedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        student.setPassword("SuperSecuredPassword");
-        student.setRole(Roles.ADMIN);
-        Optional<User> ofResult = Optional.of(student);
-        when(userRepository.findByEmail(Mockito.<String>any())).thenReturn(ofResult);
-        when(jwtService.isJwtTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any())).thenReturn(true);
-        when(jwtService.generateJwtToken(Mockito.<UserDetails>any(), anyBoolean())).thenReturn("ABC123");
-        when(jwtService.extractUsername(Mockito.<String>any())).thenReturn("janedoe");
-        authenticationServiceImpl.refresh(new JWTRefreshDTO(), new MockHttpServletRequest());
-    }
-
-    /**
-     * Method under test: {@link AuthenticationServiceImpl#refresh(JWTRefreshDTO, HttpServletRequest)}
-     */
-    @Test
-    void testRefresh8() {
-
-        Student student = mock(Student.class);
-        Mockito.<Collection<? extends GrantedAuthority>>when(student.getAuthorities()).thenReturn(new ArrayList<>());
-        doNothing().when(student).setCreatedBy(Mockito.<String>any());
-        doNothing().when(student).setCreatedDate(Mockito.<LocalDateTime>any());
-        doNothing().when(student).setModifiedBy(Mockito.<String>any());
-        doNothing().when(student).setModifiedDate(Mockito.<LocalDateTime>any());
-        doNothing().when(student).setEmail(Mockito.<String>any());
-        doNothing().when(student).setFirstName(Mockito.<String>any());
-        doNothing().when(student).setId(Mockito.<Long>any());
-        doNothing().when(student).setLastName(Mockito.<String>any());
-        doNothing().when(student).setPassword(Mockito.<String>any());
-        doNothing().when(student).setRole(Mockito.<Roles>any());
-        student.setCreatedBy("Anonymous");
-        student.setCreatedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        student.setEmail("boom.boom@courseapi.org");
-        student.setFirstName("FirstName");
-        student.setId(1L);
-        student.setLastName("LastName");
-        student.setModifiedBy("Anonymous");
-        student.setModifiedDate(LocalDate.of(1970, 1, 1).atStartOfDay());
-        student.setPassword("SuperSecuredPassword");
-        student.setRole(Roles.ADMIN);
-        Optional<User> ofResult = Optional.of(student);
-        when(userRepository.findByEmail(Mockito.<String>any())).thenReturn(ofResult);
-        when(jwtService.isJwtTokenValid(Mockito.<String>any(), Mockito.<UserDetails>any())).thenReturn(true);
-        when(jwtService.generateJwtToken(Mockito.<UserDetails>any(), anyBoolean())).thenReturn("ABC123");
-        when(jwtService.extractUsername(Mockito.<String>any())).thenReturn("janedoe");
-        authenticationServiceImpl.refresh(new JWTRefreshDTO("ABC123"), new MockHttpServletRequest());
     }
 }
 

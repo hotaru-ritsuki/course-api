@@ -1,5 +1,6 @@
 package com.example.courseapi.repository;
 
+import com.example.courseapi.config.PostgresRepositoryTestContainer;
 import com.example.courseapi.config.annotation.DefaultJPARepositoryTestConfiguration;
 import com.example.courseapi.domain.Course;
 import com.example.courseapi.domain.Instructor;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
@@ -21,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SuppressWarnings("unused")
 @DefaultJPARepositoryTestConfiguration
-public class LessonRepositoryTest {
+public class LessonRepositoryTest extends PostgresRepositoryTestContainer {
 
     @Autowired
     private TestEntityManager entityManager;
@@ -51,6 +53,7 @@ public class LessonRepositoryTest {
         this.instructor = instructorSet;
     }
 
+    @Transactional
     @Test
     public void should_find_no_lessons_if_repository_is_empty() {
         List<Lesson> lessons = lessonRepository.findAll();
@@ -58,6 +61,7 @@ public class LessonRepositoryTest {
         assertThat(lessons).isEmpty();
     }
 
+    @Transactional
     @Test
     public void should_store_a_lesson() {
         Course course = courseRepository.save(EntityCreatorUtil.createCourse("1", instructor));
@@ -70,6 +74,7 @@ public class LessonRepositoryTest {
         assertThat(lesson).hasFieldOrPropertyWithValue("course", course);
     }
 
+    @Transactional
     @Test
     public void should_find_all_lessons() {
         Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
@@ -93,6 +98,7 @@ public class LessonRepositoryTest {
                 .contains(lesson1, lesson2, lesson3);
     }
 
+    @Transactional
     @Test
     public void should_find_lesson_by_id() {
         Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
@@ -112,6 +118,7 @@ public class LessonRepositoryTest {
         assertThat(foundLesson).isEqualTo(lesson2);
     }
 
+    @Transactional
     @Test
     public void should_find_lessons_by_title_containing_string() {
         Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
@@ -138,6 +145,7 @@ public class LessonRepositoryTest {
         assertThat(lessons).hasSize(2).contains(lesson2, lesson3);
     }
 
+    @Transactional
     @Test
     public void should_find_lessons_by_description_containing_string() {
         Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));
@@ -164,6 +172,7 @@ public class LessonRepositoryTest {
         assertThat(lessons).hasSize(2).contains(lesson1, lesson3);
     }
 
+    @Transactional
     @Test
     public void should_update_lesson_by_id() {
         Course course1 = entityManager.persist(EntityCreatorUtil.createCourse("1", instructor));

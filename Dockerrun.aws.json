@@ -40,6 +40,26 @@
         {
           "name": "SECURITY_JWT_SIGNING_KEY",
           "value": "${SECURITY_JWT_SIGNING_KEY}"
+        },
+        {
+          "name": "AWS_S3_REGION",
+          "value": "${AWS_S3_REGION}"
+        },
+        {
+          "name": "AWS_S3_BUCKETNAME",
+          "value": "${AWS_S3_BUCKETNAME}"
+        },
+        {
+          "name": "AWS_ACCESS_KEY_ID",
+          "value": "${AWS_ACCESS_KEY_ID}"
+        },
+        {
+          "name": "AWS_SECRET_ACCESS_KEY",
+          "value": "${AWS_SECRET_ACCESS_KEY}"
+        },
+        {
+          "name": "AWS_SESSION_TOKEN",
+          "value": "${AWS_SESSION_TOKEN}"
         }
       ]
     }
