@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serial;
 import java.util.HashSet;
@@ -11,6 +12,7 @@ import java.util.Set;
 
 @Entity(name = "Student")
 @DiscriminatorValue("STUDENT")
+@EntityListeners(AuditingEntityListener.class)
 @Data
 @ToString(exclude = {"studentCourses"})
 @EqualsAndHashCode(callSuper = true, exclude = {"studentCourses"})

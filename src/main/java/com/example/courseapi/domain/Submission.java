@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -17,10 +18,12 @@ import static java.util.Objects.isNull;
 /**
  * Entity class for Submission
  */
-@EqualsAndHashCode(callSuper = true)
+
 @Entity
 @Table(name = "submissions", schema = "course_management")
+@EntityListeners(AuditingEntityListener.class)
 @Data
+@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
@@ -52,7 +55,7 @@ public class Submission extends BaseEntity {
     public static class SubmissionId implements Serializable {
         @Serial
         private static final long serialVersionUID = -8386131251581614960L;
-        
+
         @Column(name = "student_id")
         public Long studentId;
 
@@ -81,3 +84,4 @@ public class Submission extends BaseEntity {
         }
     }
 }
+
