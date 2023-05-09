@@ -4,7 +4,7 @@
 
 	<define name="SERVER_PATH" class="com.example.courseapi.config.ServerPathPropertyDefiner" />
 
-	<springProperty scope="context" name="CONSOLE_LEVEL" source="logging.level.console" defaultValue="INFO"/>
+	<springProperty scope="context" name="CONSOLE_LEVEL" source="logging.level.console" defaultValue="DEBUG"/>
 	<springProperty scope="context" name="FILE_LEVEL" source="logging.level.file" defaultValue="INFO"/>
 	<property name="CONSOLE_LOG_PATTERN"
 			  value="${CONSOLE_LOG_PATTERN:-%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}"/>
@@ -15,7 +15,6 @@
 	<conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter"/>
 	<conversionRule conversionWord="wEx"
 					converterClass="org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter"/>
-	<logger name="com.example.courseapi" level="DEBUG"/>
 	<appender name="ROLLIN" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>${FILE_LEVEL}</level>
@@ -58,4 +57,6 @@
 		<appender-ref ref="ROLLIN_ASYNC"/>
 	</root>
 
+	<logger name="ROOT" level="INFO"/>
+	<logger name="com.example.courseapi" level="DEBUG"/>
 </configuration>
