@@ -3,6 +3,7 @@ package com.example.courseapi.domain;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serial;
 
@@ -11,6 +12,7 @@ import java.io.Serial;
  */
 @Entity
 @Table(name = "refresh_tokens", schema = "course_management")
+@EntityListeners(AuditingEntityListener.class)
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder

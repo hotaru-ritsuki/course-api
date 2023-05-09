@@ -3,6 +3,7 @@ package com.example.courseapi.domain;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serial;
 import java.util.HashSet;
@@ -10,6 +11,7 @@ import java.util.Set;
 
 @Entity(name = "Instructor")
 @DiscriminatorValue("INSTRUCTOR")
+@EntityListeners(AuditingEntityListener.class)
 @Data
 @ToString(exclude = "instructorCourses")
 @EqualsAndHashCode(callSuper = true, exclude = "instructorCourses")

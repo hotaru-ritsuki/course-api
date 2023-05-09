@@ -11,6 +11,7 @@ import jakarta.validation.constraints.Size;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.DiscriminatorFormula;
 import org.hibernate.annotations.DiscriminatorOptions;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -28,6 +29,7 @@ import java.util.Collections;
 @DiscriminatorFormula("role") // do not use discriminator column since it filters out column when work with entity
 @DiscriminatorValue("null")
 @DiscriminatorOptions(insert = false, force = true)
+@EntityListeners(AuditingEntityListener.class)
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.experimental.SuperBuilder;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serial;
 import java.util.HashSet;
@@ -16,6 +17,7 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "lessons", schema = "course_management")
+@EntityListeners(AuditingEntityListener.class)
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
