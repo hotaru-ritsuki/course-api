@@ -1,5 +1,6 @@
 package com.example.courseapi.dto.response;
 
+import com.example.courseapi.domain.enums.Roles;
 import com.example.courseapi.dto.BaseDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -17,4 +18,5 @@ public class UserResponseDTO extends BaseDTO {
     protected String firstName;
     protected String lastName;
     protected String email;
+    protected Roles role;
 }
