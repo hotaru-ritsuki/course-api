@@ -15,13 +15,13 @@
 	<conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter"/>
 	<conversionRule conversionWord="wEx"
 					converterClass="org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter"/>
-
+	<logger name="com.example.courseapi" level="DEBUG"/>
 	<appender name="ROLLIN" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>${FILE_LEVEL}</level>
         </filter>
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-			<!-- daily rollover -->f
+			<!-- daily rollover -->
 			<fileNamePattern>${SERVER_PATH}/logs/courseapi/courseapi.%d{yyyy-MM-dd-HH}.log</fileNamePattern>
 		</rollingPolicy>
 
@@ -39,7 +39,7 @@
 
 	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
 		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-			<level>${CONSOLE_LEVEL}}</level>
+			<level>${CONSOLE_LEVEL}</level>
 		</filter>
 		<encoder>
 			<pattern>${CONSOLE_LOG_PATTERN}</pattern>
