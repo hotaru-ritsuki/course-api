@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -42,13 +42,13 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ContextConfiguration(classes = {CourseFeedbackServiceImpl.class})
 @ExtendWith(SpringExtension.class)
 class CourseFeedbackServiceImplTest {
-    @MockBean
+    @MockitoBean
     private CourseFeedbackMapper courseFeedbackMapper;
 
-    @MockBean
+    @MockitoBean
     private CourseFeedbackRepository courseFeedbackRepository;
 
-    @MockBean
+    @MockitoBean
     private StudentRepository studentRepository;
 
     @Autowired

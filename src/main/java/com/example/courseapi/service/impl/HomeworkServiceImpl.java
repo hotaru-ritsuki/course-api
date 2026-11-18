@@ -69,7 +69,7 @@ public class HomeworkServiceImpl implements HomeworkService {
                     .map(Course::getLessons).flatMap(Set::stream).map(Lesson::getId).toList();
             log.debug("Current user is student. Additional filters will be applied. \n" +
                     " Finding all homeworks with related lessons in {}", lessonIds);
-            filters.include(new FilterImpl("lesson", SpecificationComparison.IN, lessonIds));
+            filters.include(new FilterImpl("lesson.id", SpecificationComparison.IN, lessonIds));
         } else if (user instanceof Instructor) {
             Instructor instructor = instructorRepository.findById(user.getId()).orElseThrow(() ->
                     new SystemException("Student with id: " + user.getId() + " not found.", ErrorCode.FORBIDDEN));
@@ -77,7 +77,7 @@ public class HomeworkServiceImpl implements HomeworkService {
                     .map(Course::getLessons).flatMap(Set::stream).map(Lesson::getId).toList();
             log.debug("Current user is instructor. Additional filters will be applied. \n" +
                     " Finding all homeworks with related lessons in {}", lessonIds);
-            filters.include(new FilterImpl("lesson", SpecificationComparison.IN, lessonIds));
+            filters.include(new FilterImpl("lesson.id", SpecificationComparison.IN, lessonIds));
         }
         return homeworkRepository.findAll(new SpecificationBuilder<Homework>(filters).build(), pageable)
                 .map(homeworkMapper::toResponseDto);

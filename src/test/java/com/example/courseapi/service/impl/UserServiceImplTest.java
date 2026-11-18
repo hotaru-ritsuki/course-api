@@ -27,23 +27,23 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ContextConfiguration(classes = {UserServiceImpl.class})
 @ExtendWith(SpringExtension.class)
 class UserServiceImplTest {
-    @MockBean
+    @MockitoBean
     private InstructorMapper instructorMapper;
 
-    @MockBean
+    @MockitoBean
     private StudentMapper studentMapper;
 
-    @MockBean
+    @MockitoBean
     private UserMapper userMapper;
 
-    @MockBean
+    @MockitoBean
     private UserRepository userRepository;
 
     @Autowired

@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -43,10 +43,10 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ContextConfiguration(classes = {LessonServiceImpl.class})
 @ExtendWith(SpringExtension.class)
 class LessonServiceImplTest {
-    @MockBean
+    @MockitoBean
     private LessonMapper lessonMapper;
 
-    @MockBean
+    @MockitoBean
     private LessonRepository lessonRepository;
 
     @Autowired

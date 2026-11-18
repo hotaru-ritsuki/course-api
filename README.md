@@ -8,8 +8,8 @@ This is a Spring Boot project that integrates several popular technologies for b
 
 To build and run this project, you'll need the following tools:
 
-- Java Development Kit (JDK) 17 or later
-- Apache Maven 3.6 or later
+- Java Development Kit (JDK) 25 or later
+- Apache Maven 3.9 or later (or use the bundled `./mvnw` wrapper)
 - PostgreSQL 12 or later
 
 ## Installation and Setup

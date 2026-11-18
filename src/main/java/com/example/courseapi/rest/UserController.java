@@ -11,7 +11,6 @@ import com.example.courseapi.exception.code.ErrorCode;
 import com.example.courseapi.security.annotation.CurrentUser;
 import com.example.courseapi.service.UserService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
@@ -98,7 +97,7 @@ public class UserController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT', 'INSTRUCTOR')")
     @GetMapping("/users/me")
-    public ResponseEntity<? extends UserResponseDTO> me(@NotNull @CurrentUser final User currentUser) {
+    public ResponseEntity<? extends UserResponseDTO> me(@CurrentUser final User currentUser) {
         log.debug("REST GET request to get current user authentication");
         return ResponseEntity.ok(userService.mapCurrentUser(currentUser));
     }
