@@ -1,5 +1,6 @@
 package com.example.courseapi.domain;
 
+import com.example.courseapi.domain.validation.OnPersist;
 import lombok.*;
 
 import jakarta.persistence.*;
@@ -49,7 +50,7 @@ public class Course extends BaseEntity {
     @Column(name = "available")
     private Boolean available = false;
 
-    @Size(min = 1)
+    @Size(min = 1, groups = OnPersist.class)
     @Builder.Default
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(

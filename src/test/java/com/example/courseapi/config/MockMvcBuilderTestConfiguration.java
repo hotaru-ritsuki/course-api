@@ -8,13 +8,14 @@ import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.format.support.FormattingConversionService;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.stereotype.Component;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.Validator;
 import org.springframework.web.context.WebApplicationContext;
+import tools.jackson.databind.json.JsonMapper;
 
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 
@@ -22,7 +23,7 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 @RequiredArgsConstructor
 public class MockMvcBuilderTestConfiguration {
 
-    private final MappingJackson2HttpMessageConverter[] jacksonMessageConverters;
+    private final JsonMapper jsonMapper;
     private final PageableHandlerMethodArgumentResolver pageableArgumentResolver;
     private final DefaultFiltersArgumentResolver filtersArgumentResolver;
     private final ExceptionTranslator exceptionTranslator;
@@ -36,7 +37,7 @@ public class MockMvcBuilderTestConfiguration {
                 .setCustomArgumentResolvers(pageableArgumentResolver, filtersArgumentResolver, authenticationPrincipalArgumentResolver)
                 .setControllerAdvice(exceptionTranslator)
                 .setConversionService(createFormattingConversionService())
-                .setMessageConverters(jacksonMessageConverters)
+                .setMessageConverters(new JacksonJsonHttpMessageConverter(jsonMapper))
                 .setValidator(validator)
                 .build();
     }
@@ -48,7 +49,7 @@ public class MockMvcBuilderTestConfiguration {
                 .setCustomArgumentResolvers(pageableArgumentResolver, filtersArgumentResolver, authenticationPrincipalArgumentResolver)
                 .setControllerAdvice(exceptionTranslator)
                 .setConversionService(createFormattingConversionService())
-                .setMessageConverters(jacksonMessageConverters)
+                .setMessageConverters(new JacksonJsonHttpMessageConverter(jsonMapper))
                 .setValidator(validator)
                 .build();
     }

@@ -41,7 +41,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -53,25 +53,25 @@ import org.springframework.web.multipart.MultipartFile;
 @ContextConfiguration(classes = {HomeworkServiceImpl.class})
 @ExtendWith(SpringExtension.class)
 class HomeworkServiceImplTest {
-    @MockBean
+    @MockitoBean
     private HomeworkMapper homeworkMapper;
 
-    @MockBean
+    @MockitoBean
     private HomeworkRepository homeworkRepository;
 
     @Autowired
     private HomeworkServiceImpl homeworkServiceImpl;
 
-    @MockBean
+    @MockitoBean
     private InstructorRepository instructorRepository;
 
-    @MockBean
+    @MockitoBean
     private LessonRepository lessonRepository;
 
-    @MockBean
+    @MockitoBean
     private StudentRepository studentRepository;
 
-    @MockBean
+    @MockitoBean
     private S3Service s3Service;
 
     /**
